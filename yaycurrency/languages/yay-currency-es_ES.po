@@ -1,0 +1,749 @@
+# Copyright (C) 2023 YayCommerce
+# This file is distributed under the same license as the YayCurrency plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: YayCurrency 2.2.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/YayCurrency\n"
+"POT-Creation-Date: 2023-08-21T03:39:03+00:00\n"
+"PO-Revision-Date: 2023-08-21 10:45+0700\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.3.2\n"
+"X-Domain: yay-currency\n"
+
+#. Plugin Name of the plugin
+#: includes/Engine/BEPages/Settings.php:71
+#: includes/Engine/BEPages/Settings.php:72
+#: includes/YayCommerceMenu/RegisterMenu.php:151
+msgid "YayCurrency"
+msgstr "YayCurrency"
+
+#. Plugin URI of the plugin
+msgid ""
+"https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/"
+msgstr ""
+"https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/"
+
+#. Description of the plugin
+msgid ""
+"Provide multiple currencies for WooCommerce. Let your potential customers "
+"switch currency on the go."
+msgstr ""
+"Proporcionar múltiples monedas para WooCommerce. Deje que sus clientes "
+"potenciales cambien de moneda sobre la marcha."
+
+#. Author of the plugin
+msgid "YayCommerce"
+msgstr "YayCommerce"
+
+#. Author URI of the plugin
+msgid "https://yaycommerce.com"
+msgstr "https://yaycommerce.com"
+
+#. translators: %s: Woocommerce link
+#: includes/Engine/ActDeact.php:18
+msgid ""
+"YayCurrency is enabled but not effective. It requires %s in order to work"
+msgstr ""
+"YayCurrency está habilitado pero no es efectivo. Requiere %s para funcionar"
+
+#: includes/Engine/Appearance/Widget.php:63
+msgid "Currency Switcher"
+msgstr "Moneda"
+
+#: includes/Engine/BEPages/Settings.php:36
+msgid "Currencies Manage"
+msgstr "Gestión de divisas"
+
+#: includes/Engine/BEPages/Settings.php:37
+#: includes/Engine/BEPages/Settings.php:42
+msgid "Currency Manage"
+msgstr "Gestión de divisas"
+
+#: includes/Engine/BEPages/Settings.php:137
+msgid "Settings"
+msgstr "Ajustes"
+
+#: includes/Engine/BEPages/Settings.php:139
+msgid "Go Pro"
+msgstr "Hazte Pro"
+
+#: includes/Engine/BEPages/Settings.php:146
+msgid "Docs"
+msgstr "Documentos"
+
+#: includes/Engine/BEPages/Settings.php:147
+msgid "Visit community forums"
+msgstr "Visitar foros de la comunidad"
+
+#: includes/Engine/BEPages/Settings.php:147
+msgid "Support"
+msgstr "Soporte"
+
+#: includes/Engine/BEPages/Settings.php:158
+msgid "Configure multi-currency"
+msgstr "Configurar multidivisa"
+
+#: includes/Engine/BEPages/Settings.php:158
+msgid "The following options affect how prices are displayed on the frontend"
+msgstr ""
+"Las siguientes opciones afectan a cómo se muestran los precios en el frontend"
+
+#: includes/Engine/BEPages/WooCommerceFilterReport.php:37
+msgid "Sales by currency:"
+msgstr "Ventas por moneda:"
+
+#: includes/Engine/Compatibles/Dokan.php:262
+msgid "YayCurrency alert"
+msgstr "Alerta YayCurrency"
+
+#: includes/Engine/Compatibles/Dokan.php:1177
+#: includes/Engine/Compatibles/Dokan.php:1208
+#: includes/Engine/Compatibles/Dokan.php:1490
+#: includes/Engine/Compatibles/Dokan.php:1612
+#: includes/Engine/Compatibles/Dokan.php:1629
+#: includes/Engine/Compatibles/Dokan.php:1708
+#: includes/Engine/Compatibles/Dokan.php:1728
+#: includes/Engine/Compatibles/Dokan.php:1763
+msgid "Nonce invalid"
+msgstr "Nonce no válido"
+
+#: includes/Engine/Compatibles/Dokan.php:1214
+#: includes/Engine/Compatibles/Dokan.php:1221
+#: includes/Engine/Compatibles/Dokan.php:1226
+#: includes/Engine/Compatibles/Dokan.php:1494
+#: includes/Engine/Compatibles/Dokan.php:1500
+msgid "Order doesn't exist"
+msgstr "El orden no existe"
+
+#: includes/Engine/Compatibles/Dokan.php:1582
+msgid "Refund cannot be requested, please switch currency about"
+msgstr "No se puede solicitar el reembolso, cambie la moneda sobre"
+
+#: includes/Engine/Compatibles/Dokan.php:1582
+msgid "to sync with this order items currency."
+msgstr "para sincronizar con la moneda de los artículos de este pedido."
+
+#: includes/Engine/Compatibles/Dokan.php:1733
+msgid "Year invalid"
+msgstr "Año no válido"
+
+#: includes/Engine/Compatibles/Dokan.php:1772
+msgid "No request found"
+msgstr "No se ha encontrado ninguna petición"
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:728
+#: includes/Engine/FEPages/WooCommerceCurrency.php:731
+msgid "The current payment method for "
+msgstr "El método de pago actual para "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:728
+#: includes/Engine/FEPages/WooCommerceCurrency.php:731
+msgid " is not supported in your location. "
+msgstr " no se admite en su ubicación. "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:728
+#: includes/Engine/FEPages/WooCommerceCurrency.php:731
+msgid "So your payment will be recorded in "
+msgstr "Por lo tanto, su pago se registrará en "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:729
+msgid ""
+"Are you the admin? You can change the checkout options for payment methods "
+msgstr ""
+"¿Eres el administrador? Puede cambiar las opciones de pago para los métodos "
+"de pago "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:729
+msgid "here"
+msgstr "aquí"
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:729
+msgid "(Only logged in admin can see this.)"
+msgstr "(Solo el administrador que ha iniciado sesión puede ver esto)."
+
+#: includes/Fallback.php:11
+msgid ""
+"It looks like you have another YayCurrency version installed, please delete "
+"it before activating this new version. All of the settings and data are "
+"still preserved."
+msgstr ""
+"Parece que tiene otra versión de YayCurrency instalada, elimínela antes de "
+"activar esta nueva versión. Todas las configuraciones y datos aún se "
+"conservan."
+
+#: includes/Fallback.php:12
+msgid "Read more details."
+msgstr "Lea más detalles."
+
+#: includes/Helpers/Helper.php:708
+msgid "Manager Currency"
+msgstr "Moneda del administrador"
+
+#: includes/Helpers/Helper.php:709
+msgid "Checkout in fallback currency"
+msgstr "Pago en moneda alternativa"
+
+#: includes/Helpers/Helper.php:710
+msgid "Type to search currency..."
+msgstr "Tipo para buscar moneda..."
+
+#: includes/Helpers/Helper.php:711
+msgid ""
+"This currency is used as a fallback where the default currency can’t be "
+"displayed on checkout page."
+msgstr ""
+"Esta moneda se utiliza como reserva cuando la moneda predeterminada no se "
+"puede mostrar en la página de pago."
+
+#: includes/Helpers/Helper.php:712
+msgid "The fallback currency can not be disabled."
+msgstr "La moneda de reserva no se puede deshabilitar."
+
+#: includes/Helpers/Helper.php:713
+msgid "Checkout in different currency"
+msgstr "Pago en diferente moneda"
+
+#: includes/Helpers/Helper.php:714
+msgid "This sets the ability to checkout in a variety of currencies"
+msgstr "Esto establece la capacidad de pagar en una variedad de monedas."
+
+#: includes/Helpers/Helper.php:715
+msgid "Status"
+msgstr "Estado"
+
+#: includes/Helpers/Helper.php:716
+msgid "This sets the currency is applied in checkout"
+msgstr "Esto establece la moneda que se aplica en el proceso de pago"
+
+#: includes/Helpers/Helper.php:717 src/analytics.js:18
+msgid "Currency"
+msgstr "Moneda"
+
+#: includes/Helpers/Helper.php:718
+msgid "Payment Methods"
+msgstr "Métodos de pago"
+
+#: includes/Helpers/Helper.php:719
+msgid "Are you sure to disable the default currency at checkout?"
+msgstr ""
+"¿Está seguro de desactivar la moneda predeterminada al finalizar la compra?"
+
+#: includes/Helpers/Helper.php:720
+msgid "You would need to select a fallback currency."
+msgstr "Tendría que seleccionar una moneda de reserva."
+
+#: includes/Helpers/Helper.php:721
+msgid "All payment methods"
+msgstr "Todos los métodos de pago"
+
+#: includes/Helpers/Helper.php:722
+msgid "Currency symbol position"
+msgstr "Posición del símbolo de moneda"
+
+#: includes/Helpers/Helper.php:723
+msgid "Currency code position"
+msgstr "Posición del código de moneda"
+
+#: includes/Helpers/Helper.php:724
+msgid "Currency position"
+msgstr "Moneda posición"
+
+#: includes/Helpers/Helper.php:725
+msgid "Thousand separator"
+msgstr "Separador de miles"
+
+#: includes/Helpers/Helper.php:726
+msgid "Decimal separator"
+msgstr "Separador decimal"
+
+#: includes/Helpers/Helper.php:727
+msgid "Number of decimals"
+msgstr "Número de decimales"
+
+#: includes/Helpers/Helper.php:728
+msgid "Rounding"
+msgstr "Redondear"
+
+#: includes/Helpers/Helper.php:729
+msgid "Custom rounding of converted prices"
+msgstr "Redondeo personalizado de precios convertidos"
+
+#: includes/Helpers/Helper.php:730
+msgid "To"
+msgstr "Hasta"
+
+#: includes/Helpers/Helper.php:731
+msgid ""
+"Round the converted price to achieve the target ending. Eg: 365.36 becomes "
+"370 when rounding up to the nearest 10"
+msgstr ""
+"Redondee el precio convertido para lograr el objetivo final. Por ejemplo: "
+"365.36 se convierte en 370 cuando se redondea al 10 más cercano"
+
+#: includes/Helpers/Helper.php:732
+msgid "Minus"
+msgstr "Menos"
+
+#: includes/Helpers/Helper.php:733
+msgid ""
+"Deduct this amount from the above rounded price. Eg: 370 becomes 369.99 "
+"after deducting 0.01"
+msgstr ""
+"Deduca esta cantidad del precio redondeado anterior. Por ejemplo: 370 se "
+"convierte en 369.99 después de deducir 0.01"
+
+#: includes/Helpers/Helper.php:734
+msgid "Enter test amount"
+msgstr "Introduzca el importe de la prueba"
+
+#: includes/Helpers/Helper.php:735
+msgid "Result"
+msgstr "Resultado"
+
+#: includes/Helpers/Helper.php:736
+msgid "Left"
+msgstr "Izquierda"
+
+#: includes/Helpers/Helper.php:737
+msgid "Right"
+msgstr "Derecha"
+
+#: includes/Helpers/Helper.php:738
+msgid "Left with space"
+msgstr "Izquierda con espacio"
+
+#: includes/Helpers/Helper.php:739
+msgid "Right with space"
+msgstr "Derecha con espacio"
+
+#: includes/Helpers/Helper.php:740
+msgid "Not display"
+msgstr "No mostrar"
+
+#: includes/Helpers/Helper.php:741
+msgid "Disabled"
+msgstr "Desactivado"
+
+#: includes/Helpers/Helper.php:742
+msgid "Up"
+msgstr "Arriba"
+
+#: includes/Helpers/Helper.php:743
+msgid "Down"
+msgstr "Abajo"
+
+#: includes/Helpers/Helper.php:744
+msgid "Nearest"
+msgstr "Más cercano"
+
+#: includes/Helpers/Helper.php:745
+msgid "Your default currency is "
+msgstr "Su moneda predeterminada es "
+
+#: includes/Helpers/Helper.php:746
+msgid "Change"
+msgstr "Cambiar"
+
+#: includes/Helpers/Helper.php:747
+msgid "Add New Currency"
+msgstr "Agregar nueva moneda"
+
+#: includes/Helpers/Helper.php:748
+msgid ""
+"Live exchange rate unavailable. Please update manually for this currency."
+msgstr ""
+"Tipo de cambio en vivo no disponible. Actualice manualmente para esta moneda."
+
+#: includes/Helpers/Helper.php:749
+msgid "Troubleshoot"
+msgstr "Solucionar problemas"
+
+#: includes/Helpers/Helper.php:750
+msgid "Config currency's format"
+msgstr "Formato de la moneda de configuración"
+
+#: includes/Helpers/Helper.php:751
+msgid "Update currency's rate"
+msgstr "Actualizar la tasa de cambio de moneda"
+
+#: includes/Helpers/Helper.php:752
+msgid "Delete currency"
+msgstr "Eliminar moneda"
+
+#: includes/Helpers/Helper.php:753
+msgid "Fixed"
+msgstr "Fijo"
+
+#: includes/Helpers/Helper.php:754
+msgid "Auto"
+msgstr "Automático"
+
+#: includes/Helpers/Helper.php:755
+msgid "Preview"
+msgstr "Vista previa"
+
+#: includes/Helpers/Helper.php:756
+msgid "Rate"
+msgstr "Tarifa"
+
+#: includes/Helpers/Helper.php:757
+msgid "Fee"
+msgstr "Cuota"
+
+#: includes/Helpers/Helper.php:758
+msgid "Action"
+msgstr "Acción"
+
+#: includes/Helpers/Helper.php:759
+msgid ""
+"This controls what currency prices are listed at in the catalog and which "
+"currency gateways will take payments in."
+msgstr ""
+"Esto controla en qué moneda se listan los precios en el catálogo y en qué "
+"moneda se realizarán los pagos a través de las opciones de pago."
+
+#: includes/Helpers/Helper.php:760
+msgid "This show sample amount"
+msgstr "Esto muestra la cantidad de muestra"
+
+#: includes/Helpers/Helper.php:761
+msgid "This sets the exchange rate of currency based on default currency"
+msgstr ""
+"Esto establece el tipo de cambio de la moneda en función de la moneda "
+"predeterminada"
+
+#: includes/Helpers/Helper.php:762
+msgid "This sets the extra money to compensate the difference of currency"
+msgstr "Esto establece el dinero extra para compensar la diferencia de moneda"
+
+#: includes/Helpers/Helper.php:763
+msgid "Are you sure you want to delete this currency?"
+msgstr "¿Está seguro de que desea eliminar esta moneda?"
+
+#: includes/Helpers/Helper.php:764
+msgid "Configure"
+msgstr "Configurar"
+
+#: includes/Helpers/Helper.php:765
+msgid "currency"
+msgstr "moneda"
+
+#: includes/Helpers/Helper.php:766
+msgid "Switcher Location"
+msgstr "Ubicación del conmutador"
+
+#: includes/Helpers/Helper.php:767
+msgid "Choose where to display the currency switcher."
+msgstr "Elija dónde desea mostrar el selector de divisas."
+
+#: includes/Helpers/Helper.php:768
+msgid "Before short description"
+msgstr "Antes de una breve descripción"
+
+#: includes/Helpers/Helper.php:769
+msgid "After short description"
+msgstr "Después de una breve descripción"
+
+#: includes/Helpers/Helper.php:770
+msgid "Shortcode"
+msgstr "Shortcode"
+
+#: includes/Helpers/Helper.php:771
+msgid "Copy this shortcode to display currency switcher anywhere you want."
+msgstr ""
+"Copie este shortcode para mostrar el selector de divisas en cualquier lugar "
+"que desee."
+
+#: includes/Helpers/Helper.php:772
+msgid "Switcher Customizer"
+msgstr "Personalizador de conmutador"
+
+#: includes/Helpers/Helper.php:773
+msgid "Customize the currency switcher used at the above positions."
+msgstr ""
+"Personalice el selector de divisas utilizado en las posiciones anteriores."
+
+#: includes/Helpers/Helper.php:774 blocks/build/index.js:1
+#: blocks/src/index.js:158
+msgid "Switcher size"
+msgstr "Tamaño del conmutador"
+
+#: includes/Helpers/Helper.php:775
+#: includes/templates/appearance/menuItemCustomFields.php:32
+#: includes/templates/appearance/widgetForm.php:32
+msgid "Small"
+msgstr "Pequeño"
+
+#: includes/Helpers/Helper.php:776
+#: includes/templates/appearance/menuItemCustomFields.php:36
+#: includes/templates/appearance/widgetForm.php:36
+msgid "Medium"
+msgstr "Mediano"
+
+#: includes/Helpers/Helper.php:777
+msgid "Symbol"
+msgstr "Símbolo"
+
+#: includes/Helpers/Helper.php:778
+msgid "Code"
+msgstr "Código"
+
+#: includes/Helpers/Helper.php:779
+msgid "Show on Single Product Page"
+msgstr "Mostrar en una sola página de producto"
+
+#: includes/Helpers/Helper.php:780
+#: includes/templates/appearance/menuItemCustomFields.php:13
+#: includes/templates/appearance/widgetForm.php:13
+msgid "Show flag"
+msgstr "Mostrar la bandera"
+
+#: includes/Helpers/Helper.php:781
+#: includes/templates/appearance/menuItemCustomFields.php:17
+#: includes/templates/appearance/widgetForm.php:17
+msgid "Show currency name"
+msgstr "Mostrar nombre de moneda"
+
+#: includes/Helpers/Helper.php:782
+#: includes/templates/appearance/menuItemCustomFields.php:21
+#: includes/templates/appearance/widgetForm.php:21
+msgid "Show currency symbol"
+msgstr "Mostrar símbolo de moneda"
+
+#: includes/Helpers/Helper.php:783
+#: includes/templates/appearance/menuItemCustomFields.php:25
+#: includes/templates/appearance/widgetForm.php:25
+msgid "Show currency code"
+msgstr "Mostrar código de moneda"
+
+#: includes/Helpers/Helper.php:784
+msgid "Manage Currency"
+msgstr "Administrar moneda"
+
+#: includes/Helpers/Helper.php:785
+msgid "Checkout Options"
+msgstr "Opciones de pago"
+
+#: includes/Helpers/Helper.php:786
+msgid "Display Options"
+msgstr "Opciones de Visualización"
+
+#: includes/Helpers/Helper.php:787
+msgid "Advanced Settings"
+msgstr "Ajustes avanzados"
+
+#: includes/Helpers/Helper.php:788
+msgid "Save Changes"
+msgstr "Guardar cambios"
+
+#: includes/Helpers/Helper.php:789
+msgid "Exchange rate is required!"
+msgstr "¡Se requiere tipo de cambio!"
+
+#: includes/Helpers/Helper.php:790
+msgid "Fix it now"
+msgstr "Arreglarlo ahora"
+
+#: includes/Helpers/Helper.php:791
+msgid "Settings saved!"
+msgstr "¡Ajustes guardados!"
+
+#: includes/Helpers/Helper.php:792
+msgid "Exchange rate updated!"
+msgstr "¡Tipo de cambio actualizado!"
+
+#: includes/Helpers/Helper.php:793
+msgid "Successfully deleted!"
+msgstr "¡Eliminado correctamente!"
+
+#: includes/Helpers/Helper.php:794
+msgid "Unable to update exchange rate."
+msgstr "No se puede actualizar el tipo de cambio."
+
+#: includes/Helpers/Helper.php:795
+msgid "Oops! Something went wrong!"
+msgstr "¡Vaya! ¡Algo ha fallado!"
+
+#: includes/Helpers/Helper.php:796
+msgid "Contact us"
+msgstr "Contáctenos"
+
+#: includes/Helpers/Helper.php:797
+msgid "Display current currency notice on product page"
+msgstr "Mostrar el aviso de moneda actual en la página del producto"
+
+#: includes/Helpers/Helper.php:798
+msgid "You can include these shortcodes"
+msgstr "Puede incluir estos códigos cortos"
+
+#: includes/Helpers/Helper.php:799
+msgid "Fixed Product Price for Each Currency"
+msgstr "Precio fijo del producto para cada moneda"
+
+#: includes/Helpers/Helper.php:800
+msgid ""
+"By enabling this option, you can go to <b>Products</b> settings to set up "
+"fixed product prices based on currency."
+msgstr ""
+"Al habilitar esta opción, puede ir a Configuración <b>de productos</b> para "
+"configurar precios fijos de productos basados en la moneda."
+
+#: includes/Helpers/Helper.php:801
+msgid "Update Exchange Rate Automatically"
+msgstr "Actualizar el tipo de cambio automáticamente"
+
+#: includes/Helpers/Helper.php:802
+msgid "This sets the interval of update exchange rate automation."
+msgstr ""
+"Esto establece el intervalo de actualización de la automatización del tipo "
+"de cambio."
+
+#: includes/Helpers/Helper.php:803
+msgid "Auto Select Currency by Countries"
+msgstr "Selección automática de moneda por países"
+
+#: includes/Helpers/Helper.php:804
+msgid "This sets the display currency depends on the customer's country."
+msgstr ""
+"Esto establece que la moneda de visualización depende del país del cliente."
+
+#: includes/Helpers/Helper.php:805
+msgid "This sets the interval of update exchange rate automation"
+msgstr ""
+"Esto establece el intervalo de actualización de la automatización del tipo "
+"de cambio"
+
+#: includes/Helpers/Helper.php:806
+msgid "WPML Compatible"
+msgstr "WPML Compatible"
+
+#: includes/Helpers/Helper.php:807
+msgid "Polylang Compatible"
+msgstr "Polylang Compatible"
+
+#: includes/Helpers/Helper.php:808
+msgid "Minute(s)"
+msgstr "Minuto(s)"
+
+#: includes/Helpers/Helper.php:809
+msgid "Hour(s)"
+msgstr "Hora(s)"
+
+#: includes/Helpers/Helper.php:810
+msgid "Day(s)"
+msgstr "Día(s)"
+
+#: includes/Helpers/Helper.php:811
+msgid "Countries"
+msgstr "Países"
+
+#: includes/Helpers/Helper.php:812
+msgid "Language"
+msgstr "Idioma"
+
+#: includes/Helpers/Helper.php:813
+msgid "Default (Auto detect)"
+msgstr "Predeterminado (detección automática)"
+
+#: includes/Helpers/Helper.php:814
+msgid "Update all currencies's rate"
+msgstr "Actualizar la tasa de todas las monedas"
+
+#: includes/Helpers/Helper.php:815
+msgid "You have used "
+msgstr "Has utilizado "
+
+#: includes/Helpers/Helper.php:816
+msgid "free currency."
+msgstr "moneda libre."
+
+#: includes/Helpers/Helper.php:817
+msgid "Upgrade"
+msgstr "Actualizar"
+
+#: includes/Helpers/Helper.php:818
+msgid "Disable Default Currency at Checkout"
+msgstr "Desactivar la moneda predeterminada al finalizar la compra"
+
+#: includes/Helpers/Helper.php:819
+msgid "This feature only available in PRO version."
+msgstr "Esta función solo está disponible en la versión PRO."
+
+#: includes/Helpers/Helper.php:820
+msgid "Upgrade Image"
+msgstr "Actualizar imagen"
+
+#: includes/Helpers/Helper.php:821
+msgid "Currencies Limit Reached"
+msgstr "Límite de monedas alcanzado"
+
+#: includes/Helpers/Helper.php:822
+msgid "YayCurrency Lite version supports up to 3 currencies"
+msgstr "La versión YayCurrency Lite admite hasta 3 monedas"
+
+#: includes/Helpers/Helper.php:823
+msgid "Please upgrade to have unlimited currencies and other premium features!"
+msgstr "¡Actualice para tener monedas ilimitadas y otras funciones premium!"
+
+#: includes/Helpers/Helper.php:824
+msgid "Unlimited Currencies"
+msgstr "Monedas ilimitadas"
+
+#: includes/Helpers/Helper.php:825
+msgid "Auto Update Exchange Rate"
+msgstr "Actualización automática del tipo de cambio"
+
+#: includes/Helpers/Helper.php:826
+msgid "Work with WPML, Polylang and 20+ WooCommerce Plugins"
+msgstr "Trabaja con WPML, Polylang y 20+ plugins de WooCommerce"
+
+#: includes/Helpers/Helper.php:827
+msgid "Premium Technical Support"
+msgstr "Soporte Técnico Premium"
+
+#: includes/Helpers/Helper.php:828
+msgid "One-Time Payment"
+msgstr "Pago Unico"
+
+#: includes/Helpers/Helper.php:829
+msgid "30-Day Refund Guarantee"
+msgstr "Garantía de reembolso de 30 días"
+
+#: includes/Helpers/Helper.php:830
+msgid "Upgrade to YayCurrency Pro now"
+msgstr "Actualice a YayCurrency Pro ahora"
+
+#: includes/Helpers/Helper.php:831
+msgid "Copied!"
+msgstr "Copiado!"
+
+#: includes/Helpers/Helper.php:832
+msgid "Click to copy"
+msgstr "Haz clic para copiar"
+
+#: includes/templates/appearance/menuItem.php:9
+msgid "YayCurrency Switcher"
+msgstr "YayCurrency Switcher"
+
+#: includes/templates/appearance/menuItemCustomFields.php:10
+#: includes/templates/appearance/widgetForm.php:10
+msgid "Switcher elements:"
+msgstr "Elementos del conmutador:"
+
+#: includes/templates/appearance/menuItemCustomFields.php:28
+#: includes/templates/appearance/widgetForm.php:28
+msgid "Switcher size:"
+msgstr "Tamaño del conmutador:"
+
+#: blocks/build/index.js:1 blocks/src/index.js:12
+msgid "Currency Switcher - YayCurrency"
+msgstr "Cambiador de divisas - YayCurrency"
+
+#: blocks/build/index.js:1 blocks/src/index.js:136
+msgid "Switcher elements"
+msgstr "Elementos del conmutador"

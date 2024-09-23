@@ -1,0 +1,169 @@
+/* CUSTOM SELECT */
+.yay-currency-custom-select-wrapper {
+  position: relative;
+  user-select: none;
+  min-width: 70px;
+  width: 270px;
+  font-size: 13px;
+}
+
+.yay-currency-custom-select-wrapper.widget {
+  width: 100%;
+}
+
+.yay-currency-custom-select-wrapper.small {
+  width: 235px;
+  font-size: 11px;
+}
+
+.yay-currency-custom-select-wrapper.no-currency-name {
+  width: fit-content;
+}
+
+.yay-currency-custom-select-wrapper.only-currency-name {
+  width: 180px;
+}
+
+.yay-currency-custom-select-wrapper.only-currency-name-and-something {
+  width: 215px;
+}
+
+.yay-currency-custom-select-wrapper.small.only-currency-name {
+  width: 160px;
+}
+
+.yay-currency-custom-select-wrapper.small.only-currency-name-and-something {
+  width: 190px;
+}
+
+.yay-currency-custom-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.yay-currency-custom-select__trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #3b3b3b;
+  height: 40px;
+  line-height: 14px;
+  background: #ffffff;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.yay-currency-custom-select__trigger.small {
+  height: 30px;
+}
+
+.yay-currency-custom-options {
+  position: absolute;
+  display: block;
+  top: 100%;
+  left: 0 !important;
+  right: 0;
+  height: 0;
+  border: 1px solid #ccc;
+  border-radius: 0 0 4px 4px;
+  border-top: 0;
+  background: #fff;
+  transition: all 0.5s;
+  max-height: 250px;
+  overflow: auto;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 10;
+  width: 100% !important;
+}
+
+.yay-currency-custom-select.open .yay-currency-custom-options {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+.yay-currency-custom-arrow {
+  position: relative;
+  margin: 0 8px;
+  height: 8px;
+  width: 8px;
+}
+.yay-currency-custom-arrow::before,
+.yay-currency-custom-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  width: 0.15rem;
+  height: 100%;
+  transition: all 0.2s;
+}
+.yay-currency-custom-arrow::before {
+  left: -2px;
+  transform: rotate(-45deg);
+  background-color: #ccc;
+}
+.yay-currency-custom-arrow::after {
+  left: 3px;
+  transform: rotate(45deg);
+  background-color: #ccc;
+}
+.open .yay-currency-custom-arrow::before {
+  left: -2px;
+  transform: rotate(45deg);
+}
+.open .yay-currency-custom-arrow::after {
+  left: 3px;
+  transform: rotate(-45deg);
+}
+
+.open .yay-currency-custom-select__trigger {
+  border-radius: 4px 4px 0 0;
+}
+
+.yay-currency-custom-option-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  list-style: none;
+  padding: 8px;
+}
+
+.yay-currency-custom-option-row li {
+  padding: 0 !important;
+}
+
+.yay-currency-custom-option-row:hover {
+  cursor: pointer;
+  background-color: #f5f7fa;
+}
+
+.yay-currency-custom-option-row.selected {
+  color: #ffffff;
+  background-color: #2271b1;
+}
+
+.yay-currency-custom-selected-option {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.yay-currency-flag {
+  display: inline-block;
+  min-width: 24px;
+  min-height: 18px;
+  margin: 0 8px 0 0;
+  border-radius: 2px;
+}
+
+.yay-currency-flag.small {
+  min-width: 20px;
+  min-height: 15px;
+}

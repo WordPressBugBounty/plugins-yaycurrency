@@ -1,0 +1,748 @@
+# Copyright (C) 2023 YayCommerce
+# This file is distributed under the same license as the YayCurrency plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: YayCurrency 2.2.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/YayCurrency\n"
+"POT-Creation-Date: 2023-08-21T03:39:03+00:00\n"
+"PO-Revision-Date: 2023-08-21 11:08+0700\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.3.2\n"
+"X-Domain: yay-currency\n"
+
+#. Plugin Name of the plugin
+#: includes/Engine/BEPages/Settings.php:71
+#: includes/Engine/BEPages/Settings.php:72
+#: includes/YayCommerceMenu/RegisterMenu.php:151
+msgid "YayCurrency"
+msgstr "YayCurrency"
+
+#. Plugin URI of the plugin
+msgid ""
+"https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/"
+msgstr ""
+"https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/"
+
+#. Description of the plugin
+msgid ""
+"Provide multiple currencies for WooCommerce. Let your potential customers "
+"switch currency on the go."
+msgstr ""
+"Bied meerdere valuta's voor WooCommerce. Laat uw potentiële klanten onderweg "
+"van valuta wisselen."
+
+#. Author of the plugin
+msgid "YayCommerce"
+msgstr "YayCommerce"
+
+#. Author URI of the plugin
+msgid "https://yaycommerce.com"
+msgstr "https://yaycommerce.com"
+
+#. translators: %s: Woocommerce link
+#: includes/Engine/ActDeact.php:18
+msgid ""
+"YayCurrency is enabled but not effective. It requires %s in order to work"
+msgstr ""
+"YayCurrency is ingeschakeld, maar niet effectief. Het vereist %s om te "
+"kunnen werken"
+
+#: includes/Engine/Appearance/Widget.php:63
+msgid "Currency Switcher"
+msgstr "Valuta wisselaar"
+
+#: includes/Engine/BEPages/Settings.php:36
+msgid "Currencies Manage"
+msgstr "Valuta's beheren"
+
+#: includes/Engine/BEPages/Settings.php:37
+#: includes/Engine/BEPages/Settings.php:42
+msgid "Currency Manage"
+msgstr "Valuta beheren"
+
+#: includes/Engine/BEPages/Settings.php:137
+msgid "Settings"
+msgstr "Instellingen"
+
+#: includes/Engine/BEPages/Settings.php:139
+msgid "Go Pro"
+msgstr "Ga Pro"
+
+#: includes/Engine/BEPages/Settings.php:146
+msgid "Docs"
+msgstr "Documentatie"
+
+#: includes/Engine/BEPages/Settings.php:147
+msgid "Visit community forums"
+msgstr "Communityforums bezoeken"
+
+#: includes/Engine/BEPages/Settings.php:147
+msgid "Support"
+msgstr "Ondersteuning"
+
+#: includes/Engine/BEPages/Settings.php:158
+msgid "Configure multi-currency"
+msgstr "Meerdere valuta's configureren"
+
+#: includes/Engine/BEPages/Settings.php:158
+msgid "The following options affect how prices are displayed on the frontend"
+msgstr ""
+"De volgende opties zijn van invloed op de manier waarop prijzen worden "
+"weergegeven op de frontend"
+
+#: includes/Engine/BEPages/WooCommerceFilterReport.php:37
+msgid "Sales by currency:"
+msgstr "Verkoop per valuta:"
+
+#: includes/Engine/Compatibles/Dokan.php:262
+msgid "YayCurrency alert"
+msgstr "YayCurrency-waarschuwing"
+
+#: includes/Engine/Compatibles/Dokan.php:1177
+#: includes/Engine/Compatibles/Dokan.php:1208
+#: includes/Engine/Compatibles/Dokan.php:1490
+#: includes/Engine/Compatibles/Dokan.php:1612
+#: includes/Engine/Compatibles/Dokan.php:1629
+#: includes/Engine/Compatibles/Dokan.php:1708
+#: includes/Engine/Compatibles/Dokan.php:1728
+#: includes/Engine/Compatibles/Dokan.php:1763
+msgid "Nonce invalid"
+msgstr "Nonce ongeldig"
+
+#: includes/Engine/Compatibles/Dokan.php:1214
+#: includes/Engine/Compatibles/Dokan.php:1221
+#: includes/Engine/Compatibles/Dokan.php:1226
+#: includes/Engine/Compatibles/Dokan.php:1494
+#: includes/Engine/Compatibles/Dokan.php:1500
+msgid "Order doesn't exist"
+msgstr "Order bestaat niet"
+
+#: includes/Engine/Compatibles/Dokan.php:1582
+msgid "Refund cannot be requested, please switch currency about"
+msgstr "Restitutie kan niet worden aangevraagd, wissel van valuta over"
+
+#: includes/Engine/Compatibles/Dokan.php:1582
+msgid "to sync with this order items currency."
+msgstr "om te synchroniseren met de valuta van deze orderitems."
+
+#: includes/Engine/Compatibles/Dokan.php:1733
+msgid "Year invalid"
+msgstr "Jaar ongeldig"
+
+#: includes/Engine/Compatibles/Dokan.php:1772
+msgid "No request found"
+msgstr "Geen verzoek gevonden"
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:728
+#: includes/Engine/FEPages/WooCommerceCurrency.php:731
+msgid "The current payment method for "
+msgstr "De huidige betaalmethode voor "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:728
+#: includes/Engine/FEPages/WooCommerceCurrency.php:731
+msgid " is not supported in your location. "
+msgstr " wordt niet ondersteund op uw locatie. "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:728
+#: includes/Engine/FEPages/WooCommerceCurrency.php:731
+msgid "So your payment will be recorded in "
+msgstr "Uw betaling wordt dus geregistreerd in "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:729
+msgid ""
+"Are you the admin? You can change the checkout options for payment methods "
+msgstr ""
+"Ben jij de beheerder? U kunt de betaalopties voor betaalmethoden wijzigen "
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:729
+msgid "here"
+msgstr "hier"
+
+#: includes/Engine/FEPages/WooCommerceCurrency.php:729
+msgid "(Only logged in admin can see this.)"
+msgstr "(Alleen ingelogde beheerder kan dit zien.)"
+
+#: includes/Fallback.php:11
+msgid ""
+"It looks like you have another YayCurrency version installed, please delete "
+"it before activating this new version. All of the settings and data are "
+"still preserved."
+msgstr ""
+"Het lijkt erop dat u een andere YayCurrency-versie hebt geïnstalleerd, "
+"verwijder deze voordat u deze nieuwe versie activeert. Alle instellingen en "
+"gegevens blijven behouden."
+
+#: includes/Fallback.php:12
+msgid "Read more details."
+msgstr "Lees verder voor de details."
+
+#: includes/Helpers/Helper.php:708
+msgid "Manager Currency"
+msgstr "Manager Valuta"
+
+#: includes/Helpers/Helper.php:709
+msgid "Checkout in fallback currency"
+msgstr "Afrekenen in terugvalvaluta"
+
+#: includes/Helpers/Helper.php:710
+msgid "Type to search currency..."
+msgstr "Typ om valuta te zoeken..."
+
+#: includes/Helpers/Helper.php:711
+msgid ""
+"This currency is used as a fallback where the default currency can’t be "
+"displayed on checkout page."
+msgstr ""
+"Deze valuta wordt gebruikt als een terugval waarbij de standaardvaluta niet "
+"kan worden weergegeven op de betaalpagina."
+
+#: includes/Helpers/Helper.php:712
+msgid "The fallback currency can not be disabled."
+msgstr "De fallback-valuta kan niet worden uitgeschakeld."
+
+#: includes/Helpers/Helper.php:713
+msgid "Checkout in different currency"
+msgstr "Afrekenen in verschillende valuta"
+
+#: includes/Helpers/Helper.php:714
+msgid "This sets the ability to checkout in a variety of currencies"
+msgstr ""
+"Dit stelt de mogelijkheid in om af te rekenen in verschillende valuta's"
+
+#: includes/Helpers/Helper.php:715
+msgid "Status"
+msgstr "Status"
+
+#: includes/Helpers/Helper.php:716
+msgid "This sets the currency is applied in checkout"
+msgstr "Hiermee stelt u in dat de valuta wordt toegepast bij het afrekenen"
+
+#: includes/Helpers/Helper.php:717 src/analytics.js:18
+msgid "Currency"
+msgstr "Valuta"
+
+#: includes/Helpers/Helper.php:718
+msgid "Payment Methods"
+msgstr "Betaalmethodes"
+
+#: includes/Helpers/Helper.php:719
+msgid "Are you sure to disable the default currency at checkout?"
+msgstr "Weet u zeker dat u de standaardvaluta bij het afrekenen uitschakelt?"
+
+#: includes/Helpers/Helper.php:720
+msgid "You would need to select a fallback currency."
+msgstr "U moet een terugvalvaluta selecteren."
+
+#: includes/Helpers/Helper.php:721
+msgid "All payment methods"
+msgstr "Alle betalingsmethoden"
+
+#: includes/Helpers/Helper.php:722
+msgid "Currency symbol position"
+msgstr "Positie valuta symbool"
+
+#: includes/Helpers/Helper.php:723
+msgid "Currency code position"
+msgstr "Positie valutacode"
+
+#: includes/Helpers/Helper.php:724
+msgid "Currency position"
+msgstr "Valuta positie"
+
+#: includes/Helpers/Helper.php:725
+msgid "Thousand separator"
+msgstr "Scheidingsteken tussen duizendtallen"
+
+#: includes/Helpers/Helper.php:726
+msgid "Decimal separator"
+msgstr "Decimaalscheidingsteken"
+
+#: includes/Helpers/Helper.php:727
+msgid "Number of decimals"
+msgstr "Aantal decimalen"
+
+#: includes/Helpers/Helper.php:728
+msgid "Rounding"
+msgstr "Afronding"
+
+#: includes/Helpers/Helper.php:729
+msgid "Custom rounding of converted prices"
+msgstr "Aangepaste afronding van omgerekende prijzen"
+
+#: includes/Helpers/Helper.php:730
+msgid "To"
+msgstr "Tot"
+
+#: includes/Helpers/Helper.php:731
+msgid ""
+"Round the converted price to achieve the target ending. Eg: 365.36 becomes "
+"370 when rounding up to the nearest 10"
+msgstr ""
+"Rond de geconverteerde prijs af om het doeleinde te bereiken. Bv: 365,36 "
+"wordt 370 bij afronding naar boven naar de dichtstbijzijnde 10"
+
+#: includes/Helpers/Helper.php:732
+msgid "Minus"
+msgstr "Minus"
+
+#: includes/Helpers/Helper.php:733
+msgid ""
+"Deduct this amount from the above rounded price. Eg: 370 becomes 369.99 "
+"after deducting 0.01"
+msgstr ""
+"Trek dit bedrag af van bovenstaande afgeronde prijs. Bv: 370 wordt 369,99 na "
+"aftrek van 0,01"
+
+#: includes/Helpers/Helper.php:734
+msgid "Enter test amount"
+msgstr "Voer het testbedrag in"
+
+#: includes/Helpers/Helper.php:735
+msgid "Result"
+msgstr "Resultaat"
+
+#: includes/Helpers/Helper.php:736
+msgid "Left"
+msgstr "Links"
+
+#: includes/Helpers/Helper.php:737
+msgid "Right"
+msgstr "Rechts"
+
+#: includes/Helpers/Helper.php:738
+msgid "Left with space"
+msgstr "Links met ruimte"
+
+#: includes/Helpers/Helper.php:739
+msgid "Right with space"
+msgstr "Rechts met ruimte"
+
+#: includes/Helpers/Helper.php:740
+msgid "Not display"
+msgstr "Niet weergegeven"
+
+#: includes/Helpers/Helper.php:741
+msgid "Disabled"
+msgstr "Uitgeschakeld"
+
+#: includes/Helpers/Helper.php:742
+msgid "Up"
+msgstr "Omhoog"
+
+#: includes/Helpers/Helper.php:743
+msgid "Down"
+msgstr "Omlaag"
+
+#: includes/Helpers/Helper.php:744
+msgid "Nearest"
+msgstr "Dichtstbijzijndst"
+
+#: includes/Helpers/Helper.php:745
+msgid "Your default currency is "
+msgstr "Uw standaardvaluta is "
+
+#: includes/Helpers/Helper.php:746
+msgid "Change"
+msgstr "Wijzigen"
+
+#: includes/Helpers/Helper.php:747
+msgid "Add New Currency"
+msgstr "Nieuwe valuta toevoegen"
+
+#: includes/Helpers/Helper.php:748
+msgid ""
+"Live exchange rate unavailable. Please update manually for this currency."
+msgstr "Live wisselkoers niet beschikbaar. Update handmatig voor deze valuta."
+
+#: includes/Helpers/Helper.php:749
+msgid "Troubleshoot"
+msgstr "Probleemoplossing"
+
+#: includes/Helpers/Helper.php:750
+msgid "Config currency's format"
+msgstr "Het formaat van de configuratievaluta"
+
+#: includes/Helpers/Helper.php:751
+msgid "Update currency's rate"
+msgstr "De koers van de valuta bijwerken"
+
+#: includes/Helpers/Helper.php:752
+msgid "Delete currency"
+msgstr "Valuta verwijderen"
+
+#: includes/Helpers/Helper.php:753
+msgid "Fixed"
+msgstr "Vast"
+
+#: includes/Helpers/Helper.php:754
+msgid "Auto"
+msgstr "Automatisch"
+
+#: includes/Helpers/Helper.php:755
+msgid "Preview"
+msgstr "Voorbeeld"
+
+#: includes/Helpers/Helper.php:756
+msgid "Rate"
+msgstr "Tarief"
+
+#: includes/Helpers/Helper.php:757
+msgid "Fee"
+msgstr "Kosten"
+
+#: includes/Helpers/Helper.php:758
+msgid "Action"
+msgstr "Actie"
+
+#: includes/Helpers/Helper.php:759
+msgid ""
+"This controls what currency prices are listed at in the catalog and which "
+"currency gateways will take payments in."
+msgstr "Dit bepaalt de valuta voor de catalogusprijzen en betaalmethodes."
+
+#: includes/Helpers/Helper.php:760
+msgid "This show sample amount"
+msgstr "Dit toont het aantal voorbeelden"
+
+#: includes/Helpers/Helper.php:761
+msgid "This sets the exchange rate of currency based on default currency"
+msgstr ""
+"Hiermee wordt de wisselkoers van valuta ingesteld op basis van de "
+"standaardvaluta"
+
+#: includes/Helpers/Helper.php:762
+msgid "This sets the extra money to compensate the difference of currency"
+msgstr "Dit stelt het extra geld in om het verschil in valuta te compenseren"
+
+#: includes/Helpers/Helper.php:763
+msgid "Are you sure you want to delete this currency?"
+msgstr "Weet u zeker dat u deze valuta wilt verwijderen?"
+
+#: includes/Helpers/Helper.php:764
+msgid "Configure"
+msgstr "Configureren"
+
+#: includes/Helpers/Helper.php:765
+msgid "currency"
+msgstr "munteenheid"
+
+#: includes/Helpers/Helper.php:766
+msgid "Switcher Location"
+msgstr "Switcher Locatie"
+
+#: includes/Helpers/Helper.php:767
+msgid "Choose where to display the currency switcher."
+msgstr "Kies waar u de valutawisselaar wilt weergeven."
+
+#: includes/Helpers/Helper.php:768
+msgid "Before short description"
+msgstr "Voor korte beschrijving"
+
+#: includes/Helpers/Helper.php:769
+msgid "After short description"
+msgstr "Na korte beschrijving"
+
+#: includes/Helpers/Helper.php:770
+msgid "Shortcode"
+msgstr "Shortcode"
+
+#: includes/Helpers/Helper.php:771
+msgid "Copy this shortcode to display currency switcher anywhere you want."
+msgstr ""
+"Kopieer deze shortcode om de valutawisselaar overal weer te geven waar u "
+"maar wilt."
+
+#: includes/Helpers/Helper.php:772
+msgid "Switcher Customizer"
+msgstr "Switcher Customizer"
+
+#: includes/Helpers/Helper.php:773
+msgid "Customize the currency switcher used at the above positions."
+msgstr ""
+"Pas de valutawisselaar aan die op de bovenstaande posities wordt gebruikt."
+
+#: includes/Helpers/Helper.php:774 blocks/build/index.js:1
+#: blocks/src/index.js:158
+msgid "Switcher size"
+msgstr "Switcher grootte"
+
+#: includes/Helpers/Helper.php:775
+#: includes/templates/appearance/menuItemCustomFields.php:32
+#: includes/templates/appearance/widgetForm.php:32
+msgid "Small"
+msgstr "Klein"
+
+#: includes/Helpers/Helper.php:776
+#: includes/templates/appearance/menuItemCustomFields.php:36
+#: includes/templates/appearance/widgetForm.php:36
+msgid "Medium"
+msgstr "Gemiddeld"
+
+#: includes/Helpers/Helper.php:777
+msgid "Symbol"
+msgstr "Symbol"
+
+#: includes/Helpers/Helper.php:778
+msgid "Code"
+msgstr "Code"
+
+#: includes/Helpers/Helper.php:779
+msgid "Show on Single Product Page"
+msgstr "Weergeven op één productpagina"
+
+#: includes/Helpers/Helper.php:780
+#: includes/templates/appearance/menuItemCustomFields.php:13
+#: includes/templates/appearance/widgetForm.php:13
+msgid "Show flag"
+msgstr "Toon vlag"
+
+#: includes/Helpers/Helper.php:781
+#: includes/templates/appearance/menuItemCustomFields.php:17
+#: includes/templates/appearance/widgetForm.php:17
+msgid "Show currency name"
+msgstr "Valutanaam weergeven"
+
+#: includes/Helpers/Helper.php:782
+#: includes/templates/appearance/menuItemCustomFields.php:21
+#: includes/templates/appearance/widgetForm.php:21
+msgid "Show currency symbol"
+msgstr "Valutasymbool weergeven"
+
+#: includes/Helpers/Helper.php:783
+#: includes/templates/appearance/menuItemCustomFields.php:25
+#: includes/templates/appearance/widgetForm.php:25
+msgid "Show currency code"
+msgstr "Toon valutacode"
+
+#: includes/Helpers/Helper.php:784
+msgid "Manage Currency"
+msgstr "Valuta beheren"
+
+#: includes/Helpers/Helper.php:785
+msgid "Checkout Options"
+msgstr "Opties voor Afrekenen"
+
+#: includes/Helpers/Helper.php:786
+msgid "Display Options"
+msgstr "Weergaveopties"
+
+#: includes/Helpers/Helper.php:787
+msgid "Advanced Settings"
+msgstr "Geavanceerde instellingen"
+
+#: includes/Helpers/Helper.php:788
+msgid "Save Changes"
+msgstr "Wijzigingen opslaan"
+
+#: includes/Helpers/Helper.php:789
+msgid "Exchange rate is required!"
+msgstr "Wisselkoers is vereist!"
+
+#: includes/Helpers/Helper.php:790
+msgid "Fix it now"
+msgstr "Repareer het nu"
+
+#: includes/Helpers/Helper.php:791
+msgid "Settings saved!"
+msgstr "Instellingen opgeslagen!"
+
+#: includes/Helpers/Helper.php:792
+msgid "Exchange rate updated!"
+msgstr "Wisselkoers bijgewerkt!"
+
+#: includes/Helpers/Helper.php:793
+msgid "Successfully deleted!"
+msgstr "Verwijderen gelukt."
+
+#: includes/Helpers/Helper.php:794
+msgid "Unable to update exchange rate."
+msgstr "Kan de wisselkoers niet bijwerken."
+
+#: includes/Helpers/Helper.php:795
+msgid "Oops! Something went wrong!"
+msgstr "Oeps! Er is iets misgegaan!"
+
+#: includes/Helpers/Helper.php:796
+msgid "Contact us"
+msgstr "Neem contact op"
+
+#: includes/Helpers/Helper.php:797
+msgid "Display current currency notice on product page"
+msgstr "Huidige valutamelding weergeven op productpagina"
+
+#: includes/Helpers/Helper.php:798
+msgid "You can include these shortcodes"
+msgstr "U kunt deze shortcodes opnemen"
+
+#: includes/Helpers/Helper.php:799
+msgid "Fixed Product Price for Each Currency"
+msgstr "Vaste productprijs voor elke valuta"
+
+#: includes/Helpers/Helper.php:800
+msgid ""
+"By enabling this option, you can go to <b>Products</b> settings to set up "
+"fixed product prices based on currency."
+msgstr ""
+"Door deze optie in te schakelen, kunt u naar <b>Productinstellingen</b> gaan "
+"om vaste productprijzen in te stellen op basis van valuta."
+
+#: includes/Helpers/Helper.php:801
+msgid "Update Exchange Rate Automatically"
+msgstr "Wisselkoers automatisch bijwerken"
+
+#: includes/Helpers/Helper.php:802
+msgid "This sets the interval of update exchange rate automation."
+msgstr ""
+"Hiermee stelt u het interval in voor de automatisering van de "
+"updatewisselkoers."
+
+#: includes/Helpers/Helper.php:803
+msgid "Auto Select Currency by Countries"
+msgstr "Automatisch valuta selecteren op landen"
+
+#: includes/Helpers/Helper.php:804
+msgid "This sets the display currency depends on the customer's country."
+msgstr "Dit stelt de weergavevaluta in afhankelijk van het land van de klant."
+
+#: includes/Helpers/Helper.php:805
+msgid "This sets the interval of update exchange rate automation"
+msgstr ""
+"Hiermee stelt u het interval in voor het bijwerken van "
+"wisselkoersautomatisering"
+
+#: includes/Helpers/Helper.php:806
+msgid "WPML Compatible"
+msgstr "WPML-compatibel"
+
+#: includes/Helpers/Helper.php:807
+msgid "Polylang Compatible"
+msgstr "Polylang-compatibel"
+
+#: includes/Helpers/Helper.php:808
+msgid "Minute(s)"
+msgstr "Minuten"
+
+#: includes/Helpers/Helper.php:809
+msgid "Hour(s)"
+msgstr "Uren"
+
+#: includes/Helpers/Helper.php:810
+msgid "Day(s)"
+msgstr "Dagen"
+
+#: includes/Helpers/Helper.php:811
+msgid "Countries"
+msgstr "Landen"
+
+#: includes/Helpers/Helper.php:812
+msgid "Language"
+msgstr "Taal"
+
+#: includes/Helpers/Helper.php:813
+msgid "Default (Auto detect)"
+msgstr "Standaard (Automatische detectie)"
+
+#: includes/Helpers/Helper.php:814
+msgid "Update all currencies's rate"
+msgstr "De koers van alle valuta's bijwerken"
+
+#: includes/Helpers/Helper.php:815
+msgid "You have used "
+msgstr "U hebt gebruikt "
+
+#: includes/Helpers/Helper.php:816
+msgid "free currency."
+msgstr "gratis valuta."
+
+#: includes/Helpers/Helper.php:817
+msgid "Upgrade"
+msgstr "Upgrade"
+
+#: includes/Helpers/Helper.php:818
+msgid "Disable Default Currency at Checkout"
+msgstr "Standaardvaluta uitschakelen bij het afrekenen"
+
+#: includes/Helpers/Helper.php:819
+msgid "This feature only available in PRO version."
+msgstr "Deze functie is alleen beschikbaar in de PRO-versie."
+
+#: includes/Helpers/Helper.php:820
+msgid "Upgrade Image"
+msgstr "Upgrade afbeelding"
+
+#: includes/Helpers/Helper.php:821
+msgid "Currencies Limit Reached"
+msgstr "Valutalimiet bereikt"
+
+#: includes/Helpers/Helper.php:822
+msgid "YayCurrency Lite version supports up to 3 currencies"
+msgstr "YayCurrency Lite-versie ondersteunt maximaal 3 valuta's"
+
+#: includes/Helpers/Helper.php:823
+msgid "Please upgrade to have unlimited currencies and other premium features!"
+msgstr ""
+"Upgrade alstublieft om onbeperkte valuta's en andere premiumfuncties te "
+"hebben!"
+
+#: includes/Helpers/Helper.php:824
+msgid "Unlimited Currencies"
+msgstr "Onbeperkte valuta's"
+
+#: includes/Helpers/Helper.php:825
+msgid "Auto Update Exchange Rate"
+msgstr "Wisselkoers automatisch bijwerken"
+
+#: includes/Helpers/Helper.php:826
+msgid "Work with WPML, Polylang and 20+ WooCommerce Plugins"
+msgstr "Werk met WPML, Polylang en 20+ WooCommerce Plugins"
+
+#: includes/Helpers/Helper.php:827
+msgid "Premium Technical Support"
+msgstr "Premium technische ondersteuning"
+
+#: includes/Helpers/Helper.php:828
+msgid "One-Time Payment"
+msgstr "Eenmalige Betaling"
+
+#: includes/Helpers/Helper.php:829
+msgid "30-Day Refund Guarantee"
+msgstr "30 dagen restitutiegarantie"
+
+#: includes/Helpers/Helper.php:830
+msgid "Upgrade to YayCurrency Pro now"
+msgstr "Upgrade nu naar YayCurrency Pro"
+
+#: includes/Helpers/Helper.php:831
+msgid "Copied!"
+msgstr "Gekopieerd!"
+
+#: includes/Helpers/Helper.php:832
+msgid "Click to copy"
+msgstr "Klik om te kopiëren"
+
+#: includes/templates/appearance/menuItem.php:9
+msgid "YayCurrency Switcher"
+msgstr "YayCurrency Switcher"
+
+#: includes/templates/appearance/menuItemCustomFields.php:10
+#: includes/templates/appearance/widgetForm.php:10
+msgid "Switcher elements:"
+msgstr "Switcher elementen:"
+
+#: includes/templates/appearance/menuItemCustomFields.php:28
+#: includes/templates/appearance/widgetForm.php:28
+msgid "Switcher size:"
+msgstr "Switcher grootte:"
+
+#: blocks/build/index.js:1 blocks/src/index.js:12
+msgid "Currency Switcher - YayCurrency"
+msgstr "Valutawisselaar - YayCurrency"
+
+#: blocks/build/index.js:1 blocks/src/index.js:136
+msgid "Switcher elements"
+msgstr "Switcher elementen"

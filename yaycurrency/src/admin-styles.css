@@ -1,0 +1,228 @@
+/* Switcher as a menu admin */
+.yay-currency-menu-item-custom-fields {
+  margin-bottom: 16px;
+}
+.yay-currency-menu-item-custom-fields__title {
+  display: inline-block;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.yay-currency-menu-item-custom-fields__field:not(:last-child) {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.yay-currency-menu-item-custom-fields__field--checkbox {
+  margin: 0 6px 0 0 !important;
+}
+
+.yay-currency-menu-item-custom-field__field-group {
+  display: flex;
+  gap: 12px;
+}
+
+.yay-currency-menu-item-custom-fields__field--radio {
+  margin: 2px !important;
+}
+
+/* Switcher as a classic widget admin */
+.yay-currency-widget-custom-fields {
+  margin-bottom: 16px;
+}
+.yay-currency-widget-custom-fields__title {
+  display: inline-block;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.yay-currency-widget-custom-fields__field:not(:last-child) {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.yay-currency-widget-custom-fields__field--checkbox {
+  margin: 0 6px 0 0 !important;
+}
+
+.yay-currency-widget-custom-field__field-group {
+  display: flex;
+  gap: 12px;
+}
+
+.yay-currency-widget-custom-fields__field--radio {
+  margin: 2px !important;
+}
+
+/* Fixed price for simple product */
+.yay-currency-inputs {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  z-index: 999;
+}
+
+.yay-currency-product-custom-fixed-prices-simple .yay-currency-modal-wrapper {
+  background-image: linear-gradient(180deg, #ffffff66, #ffffff);
+  height: 100%;
+  left: 0;
+  position: relative;
+  width: 100%;
+  z-index: 1000;
+}
+
+.yay-currency-locked-modal {
+  align-items: center;
+  border-radius: 12px;
+  box-shadow: 0px 3px 68px 0px rgba(95, 95, 95, 0.31);
+  border-radius: 4px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  left: 50%;
+  padding: 24px 0;
+  position: absolute;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  z-index: 10;
+}
+
+.yay-currency-locked-modal p {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.yay-currency-locked-modal .button-primary {
+  font-weight: bold;
+}
+
+.yay-currency-overlay {
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 5;
+}
+
+.yay-currency-product-custom-fixed-prices-simple
+  .yay-currency-fixed-price-checkbox-wrapper {
+  align-items: center;
+  display: flex;
+  pointer-events: none;
+}
+
+.yay-currency-product-custom-fixed-prices-simple
+  .yay-currency-fixed-price-checkbox-wrapper
+  label {
+  font-size: 16px;
+  font-weight: bold;
+  width: auto;
+}
+
+.yay-currency-product-custom-fixed-prices-simple
+  .yay-currency-fixed-price-checkbox-wrapper
+  input {
+  visibility: hidden;
+}
+
+.yay-currency-product-custom-fixed-prices-simple .checkbox-sub-text {
+  display: block;
+  margin: 0 0 32px 12px;
+}
+
+.yay-currency-product-custom-fixed-prices-simple
+  .yay-currency-fixed-prices-input-wrapper {
+  position: relative;
+  height: 310px;
+}
+
+.yay-currency-product-custom-fixed-prices-simple
+  .yay-currency-fixed-prices-input {
+  box-shadow: inset 4px 0 #ffc106;
+}
+
+.yay-currency-product-custom-fixed-prices-simple .slider {
+  background-color: #6ea8d6;
+  border-radius: 100px;
+  cursor: pointer;
+  height: 20px;
+  margin-left: -20px;
+  position: relative;
+  transition: 0.4s;
+  width: 44px;
+}
+
+.yay-currency-product-custom-fixed-prices-simple .round {
+  background-color: #2271b1;
+  border-radius: 50%;
+  height: 16px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: 0.4s;
+  transform: translateX(24px);
+  width: 16px;
+}
+
+/* Fixed price for variant product */
+#fixed_price_variable_checkbox {
+  display: none;
+}
+
+.yay-currency-product-custom-fixed-prices-variable .yay-currency-modal-wrapper {
+  background-image: linear-gradient(180deg, #ffffff66, #ffffff);
+  height: 100%;
+  left: -26px;
+  position: relative;
+  width: 104%;
+  z-index: 1000;
+}
+.yay-currency-product-custom-fixed-prices-variable {
+  display: table;
+  width: 100%;
+}
+
+.yay-currency-product-custom-fixed-prices-variable
+  .yay-currency-fixed-price-checkbox-wrapper {
+  pointer-events: none;
+}
+
+.yay-currency-product-custom-fixed-prices-variable
+  .yay-currency-fixed-price-checkbox-wrapper
+  label {
+  font-size: 16px;
+  font-weight: bold;
+  width: auto;
+}
+
+.yay-currency-product-custom-fixed-prices-variable .checkbox-sub-text {
+  display: block;
+  margin: 0 0 12px 0;
+}
+
+.yay-currency-product-custom-fixed-prices-variable
+  .yay-currency-fixed-prices-input-wrapper {
+  height: 353px;
+  position: relative;
+}
+
+.yay-currency-product-custom-fixed-prices-variable .form-row {
+  position: relative;
+}
+
+.yay-currency-product-custom-fixed-prices-variable
+  .form-row-first
+  label::before {
+  box-shadow: inset 4px 0 #ffc106;
+  content: '';
+  height: 70px;
+  left: -26px;
+  position: absolute;
+  top: 2px;
+  width: 4px;
+}

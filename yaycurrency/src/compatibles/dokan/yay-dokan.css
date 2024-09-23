@@ -1,0 +1,14 @@
+strong.yay-dokan-price-wrapper {
+    margin: 20px 5px;
+    font-size: 1em;
+    font-weight: bold;
+}
+
+.dokan-reports-area .dokan-dashboard-header .entry-title .yay-currency-single-page-switcher {
+    text-align: right;
+    float: right;
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+    letter-spacing: 0;
+    margin-top: 20px;
+}
