@@ -40,7 +40,7 @@ class WPCFrequentlyBoughtTogetherForWooCommerce {
 	}
 
 	public function product_addons_set_cart_contents( $cart_contents, $cart_item_key, $cart_item, $apply_currency ) {
-		if ( isset( $cart_item['woobt_keys'] ) || ( isset( $cart_item['woobt_parent_id'], $cart_item['woobt_price_item'] ) && ( '100%' !== $cart_item['woobt_price_item'] ) && ( '' !== $cart_item['woobt_price_item'] ) ) ) {
+		if ( isset( $cart_item['woobt_parent_id'], $cart_item['woobt_price_item'] ) && ( '100%' !== $cart_item['woobt_price_item'] ) && ( '' !== $cart_item['woobt_price_item'] ) ) {
 			SupportHelper::set_cart_item_objects_property( $cart_contents[ $cart_item_key ]['data'], 'yay_woobt_product', true );
 		}
 	}

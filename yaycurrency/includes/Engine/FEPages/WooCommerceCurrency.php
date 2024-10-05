@@ -121,6 +121,7 @@ class WooCommerceCurrency {
 			'default_currency_code'   => $this->default_currency,
 			'hide_dropdown_switcher'  => YayCurrencyHelper::detect_allow_hide_dropdown_currencies(),
 			'cookie_name'             => YayCurrencyHelper::get_cookie_name(),
+			'cookie_switcher_name'    => YayCurrencyHelper::get_cookie_name( 'switcher' ),
 			'current_theme'           => Helper::get_current_theme(),
 		);
 

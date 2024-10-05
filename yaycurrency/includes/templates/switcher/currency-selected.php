@@ -8,6 +8,7 @@ $selected_html_flag = false;
 if ( $is_show_flag ) {
 	$selected_country_code = $countries_code[ $currency_name ];
 	$selected_flag_url     = Helper::get_flag_by_country_code( $selected_country_code );
+	$selected_flag_url     = apply_filters( 'yay_currency_get_flag_url_by_currency_code', $selected_flag_url, $selected_currency['currency'] );
 	$selected_html_flag    = '<span style="background-image: url(' . $selected_flag_url . ')" class="yay-currency-flag selected ' . $switcher_size . '" data-country_code="' . $selected_country_code . '"></span>';
 }
 $get_symbol_by_currency   = YayCurrencyHelper::get_symbol_by_currency( $currency_name, $converted_currency );

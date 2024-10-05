@@ -103,6 +103,7 @@ class Helper {
 			'WooCommercePayPalPayments',
 			'WooDiscountRules',
 			'WooCommerceTMExtraProductOptions',
+			'WoocommerceCustomProductAddons',
 			'WooCommerceProductAddons',
 			'WooCommerceProductAddOnsUltimate',
 			'Barn2WooCommerceWholesalePro',
@@ -230,23 +231,29 @@ class Helper {
 	}
 
 	public static function get_flag_by_country_code( $country_code = 'us' ) {
+
 		$flag = $country_code;
+
 		switch ( $country_code ) {
 			case 'byr':
 				$flag = 'by';
-				return YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
+				break;
 			case 'cuc':
 				$flag = 'cu';
-				return YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
+				break;
 			case 'irt':
 				$flag = 'ir';
-				return YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
+				break;
 			case 'vef':
 				$flag = 've';
-				return YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
+				break;
 			default:
-				return YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
+				break;
 		}
+
+		$flag_url = YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
+
+		return apply_filters( 'yay_currency_get_flag_by_country_code', $flag_url, $country_code );
 	}
 
 	public static function currency_code_by_country_code() {

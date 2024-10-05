@@ -2,8 +2,8 @@
 Contributors: YayCommerce
 Tags: currency switcher, multi currency, woocommerce, currency, currency converter, multicurrency
 Requires at least: 3.0
-Tested up to: 6.6.1
-Stable tag: 3.0.1
+Tested up to: 6.6.2
+Stable tag: 3.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -171,6 +171,14 @@ To quickly get the answers, please attach screenshots of currently active WooCom
 5. Checkout permission for different payment methods and currencies 
 
 == Changelog ==
+
+= Oct 4, 2024 - Version 3.0.2 =
+- WC tested up to 9.3.3  
+- Added: yay_currency_get_flag_url_by_currency_code filter hook for customizing the flag URL based currency code
+- Fixed: Compatible with WooCommerce PayPal Payments (from version 2.9.x)
+- Fixed: Compatible with LearnPress plugin. [https://thimpress.com/learnpress/]
+- Fixed: The Filter By Price widget not converting based on the selected currency
+- Fixed: Woocommerce Custom Product Addons (from version 5.x.x). [https://acowebs.com/woo-custom-product-addons/]
 
 = Sep 5, 2024 - Version 3.0.1 =
 - Improved: Exchange rate calculation using the regular market price, instead the old version close price.

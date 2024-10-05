@@ -275,6 +275,10 @@
   min-height: 18px;
   margin: 0 8px 0 0 !important;
   border-radius: 2px;
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .yay-currency-flag.small {

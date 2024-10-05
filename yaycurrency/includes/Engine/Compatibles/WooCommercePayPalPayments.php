@@ -30,6 +30,7 @@ class WooCommercePayPalPayments {
 		$this->default_currency              = Helper::default_currency_code();
 		$this->is_dis_checkout_diff_currency = YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency );
 
+		add_filter( 'woocommerce_currency', array( $this, 'woocommerce_currency' ), 999 );
 		add_filter( 'woocommerce_paypal_args', array( $this, 'custom_request_paypal' ), 10, 2 );
 
 		if ( $this->is_dis_checkout_diff_currency ) {
@@ -43,6 +44,23 @@ class WooCommercePayPalPayments {
 			}
 		}
 
+	}
+
+	public function woocommerce_currency( $currency ) {
+
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $currency;
+		}
+
+		if ( wp_doing_ajax() && isset( $_REQUEST['action'] ) && 'woocommerce_load_variations' === $_REQUEST['action'] ) {
+			return $currency;
+		}
+
+		if ( ! $this->is_dis_checkout_diff_currency && isset( $this->apply_currency['currency'] ) ) {
+			$currency = $this->apply_currency['currency'];
+		}
+
+		return $currency;
 	}
 
 	public function custom_currency_paypal_method( $currency, $is_dis_checkout_diff_currency ) {

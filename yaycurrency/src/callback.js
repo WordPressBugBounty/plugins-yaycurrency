@@ -42,6 +42,19 @@
         blocks_data_args: {
             checkout: ".wp-block-woocommerce-checkout[data-block-name='woocommerce/checkout']",
             cart: ".wp-block-woocommerce-cart[data-block-name='woocommerce/cart']",
+            filterPrice: {
+                class: {
+                    wrapper: '.wp-block-woocommerce-price-filter',
+                    controls: '.wc-block-price-filter__controls',
+                    filterSlideInput: '.wp-block-woocommerce-filter-wrapper[data-filter-type="price-filter"] .wc-block-price-slider input',
+                    minPriceWrapper: '.wc-block-price-filter__range-input--min',
+                    maxPriceWrapper: '.wc-block-price-filter__range-input--max',
+                    minPriceInput: 'input.wc-block-price-filter__amount--min',
+                    maxPriceInput: 'input.wc-block-price-filter__amount--max',
+                    resetButton: '.wc-block-components-filter-reset-button',
+                    progressRange: '.wc-block-price-filter__range-input-progress',
+                }
+            }
         },
         cookies_data_args: {
             cartBlocks: 'yay_cart_blocks_page',
@@ -179,7 +192,7 @@
                     .data('country_code');
                 YayCurrency_Callback.Helper.refreshCartFragments();
                 $(switcher_args.currencySwitcher).val(currencyID).change();
-
+                YayCurrency_Callback.Helper.setCookie(yayCurrency.cookie_switcher_name ?? 'yay_currency_do_change_switcher', currencyID, 1);
                 if (!$(this).hasClass(switcher_args.selectedClass)) {
                     const clickedSwitcher = $(this).closest(switcher_args.customSelect);
 
@@ -327,24 +340,12 @@
                     .replace(/([0-9]*\.0*[1-9]+)0+$/gm, '$1')
                     .replace(/.00+$/, '')
         },
-        roundedAmountByCurrency: function (amount, apply_currency) {
-            if (!apply_currency) {
+        roundedAmountByCurrency: function (amount, applyCurrency) {
+            if (!applyCurrency) {
                 return amount;
             }
-            const { roundingType, roundingValue, subtractAmount, numberDecimal, decimalSeparator, thousandSeparator } = apply_currency;
-            switch (roundingType) {
-                case 'up':
-                    amount = Math.ceil(amount / roundingValue) * roundingValue - subtractAmount
-                    break
-                case 'down':
-                    amount = Math.floor(amount / roundingValue) * roundingValue - subtractAmount
-                    break
-                case 'nearest':
-                    amount = Math.round(amount / roundingValue) * roundingValue - subtractAmount
-                    break
-                default:
-                    break;
-            }
+            const { numberDecimal, decimalSeparator, thousandSeparator } = applyCurrency;
+            amount = YayCurrency_Callback.Helper.handelRoundedPriceByCurrency(amount, applyCurrency);
             const formattedTestAmount = YayCurrency_Callback.Helper.doFormatNumber(
                 amount,
                 Number(numberDecimal),
@@ -411,7 +412,99 @@
             $(from_el).trigger('change');
             $(to_el).trigger('change');
         },
+        handelRoundedPriceByCurrency: function (price, apply_currency) {
+            const { roundingType, roundingValue, subtractAmount } = apply_currency;
+            switch (roundingType) {
+                case 'up':
+                    price = Math.ceil(price / roundingValue) * roundingValue - subtractAmount;
+                    break
+                case 'down':
+                    price = Math.floor(price / roundingValue) * roundingValue - subtractAmount;
+                    break
+                case 'nearest':
+                    price = Math.round(price / roundingValue) * roundingValue - subtractAmount;
+                    break
+                default:
+                    break;
+            }
+            return price;
+        },
+        handelConvertPrice: function (price, currencyID, minorUnit = false) {
+            const applyCurrency = YayCurrency_Callback.Helper.getCurrentCurrency(currencyID);
+            const rateFee = parseFloat(YayCurrency_Callback.Helper.getRateFeeByCurrency(applyCurrency));
+            if (!rateFee || 1 === rateFee) {
+                return price;
+            }
+            price = price * rateFee;
+            if (minorUnit) {
+                price = parseInt(price) / minorUnit;
+            }
+            price = YayCurrency_Callback.Helper.handelRoundedPriceByCurrency(price, applyCurrency);
+            return minorUnit ? price * minorUnit : price;
+        },
+        handelRevertPrice: function (price = 0, applyCurrency = false) {
+            if (!applyCurrency) {
+                const currencyID = YayCurrency_Callback.Helper.getCookie(yayCurrency.cookie_name);
+                applyCurrency = YayCurrency_Callback.Helper.getCurrentCurrency(currencyID);
+            }
+            const rateFee = parseFloat(YayCurrency_Callback.Helper.getRateFeeByCurrency(applyCurrency));
+            if (!rateFee || 1 === rateFee) {
+                return price;
+            }
+            return price / rateFee;
+        },
+        decodeHtmlEntity: function (entity) {
+            var textArea = document.createElement('textarea');
+            textArea.innerHTML = entity;
+            return textArea.value;
+        },
+        formatPricePosition: function (price = 0, character = '', position = 'left') {
+            let formattedPrice = price;
+            switch (position) {
+                case 'left':
+                    formattedPrice = character + formattedPrice;
+                    break;
+                case 'right':
+                    formattedPrice = formattedPrice + character;
+                    break;
+                case 'left_space':
+                    formattedPrice = character + ' ' + formattedPrice;
+                    break;
+                case 'right_space':
+                    formattedPrice = formattedPrice + ' ' + character;
+                    break;
+                default:
+                    break;
+            }
+            return formattedPrice;
+        },
+        formatPriceByCurrency: function (price = 0, applyRateFee = false, applyCurrency = false) {
+            if (!applyCurrency) {
+                const currencyID = YayCurrency_Callback.Helper.getCookie(yayCurrency.cookie_name);
+                applyCurrency = YayCurrency_Callback.Helper.getCurrentCurrency(currencyID);
+            }
+            if (applyRateFee) {
+                const rateFee = parseFloat(YayCurrency_Callback.Helper.getRateFeeByCurrency(applyCurrency));
+                price = YayCurrency_Callback.Helper.handelRoundedPriceByCurrency(price * rateFee, applyCurrency);
+            }
 
+            // Convert the price to a fixed decimal string
+            var priceString = price.toFixed(applyCurrency.numberDecimal);
+
+            // Split the price into whole and decimal parts (if decimals were used)
+            var parts = priceString.split('.');
+
+            // Add thousand separators to the whole part
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, applyCurrency.thousandSeparator);
+
+            // Combine whole part and decimal part with the decimal separator
+            var formattedPrice = parts.join(applyCurrency.decimalSeparator);
+
+            // Decode HTML entity and position the currency symbol
+            var decodedSymbol = YayCurrency_Callback.Helper.decodeHtmlEntity(applyCurrency.symbol);
+
+            return YayCurrency_Callback.Helper.formatPricePosition(formattedPrice, decodedSymbol, applyCurrency.currencyPosition);
+        },
         // Compatible With 3rd Plugins
         compatibleWithThirdPartyPlugins: function (currencyID) {
             // compatible with Measurement Price Calculator plugin
@@ -469,6 +562,120 @@
                     }
                 });
             }
+
+            // Filter by Price (WooCommerce plugin)
+            YayCurrency_Callback.Helper.handleFilterByPrice(currencyID);
+
+        },
+        handleFilterByPrice: function (currencyID) {
+            window.onload = function () {
+                YayCurrency_Callback.Helper.handleFilterByPriceClassicEditor(currencyID);
+                YayCurrency_Callback.Helper.handleFilterByPriceBlock(currencyID);
+            };
+        },
+        priceSliderAmountFormatMoney: function (element, amount, woocommerce_price_slider_params) {
+            element.html(accounting.formatMoney(amount, {
+                symbol: woocommerce_price_slider_params.currency_format_symbol,
+                decimal: woocommerce_price_slider_params.currency_format_decimal_sep,
+                thousand: woocommerce_price_slider_params.currency_format_thousand_sep,
+                precision: woocommerce_price_slider_params.currency_format_num_decimals,
+                format: woocommerce_price_slider_params.currency_format
+            }));
+        },
+        handleFilterByPriceClassicEditor: function (currencyID) {
+            // use Widget classic editor
+            if ($('.widget_price_filter .price_slider').length) {
+                const applyCurrency = YayCurrency_Callback.Helper.getCurrentCurrency(currencyID);
+                if (applyCurrency.currency === window.yayCurrency.default_currency_code) {
+                    return;
+                }
+
+                let currentMinPrice = $('.price_slider_amount #min_price').val(),
+                    currentMaxPrice = $('.price_slider_amount #max_price').val();
+                if (!currentMinPrice || !currentMaxPrice) {
+                    return;
+                }
+
+                $(document.body).on('price_slider_create price_slider_slide', function (event, min, max) {
+                    $('.price_slider_amount span.from').html(YayCurrency_Callback.Helper.formatPriceByCurrency(min, true, applyCurrency));
+                    $('.price_slider_amount span.to').html(YayCurrency_Callback.Helper.formatPriceByCurrency(max, true, applyCurrency));
+                });
+
+                $('.price_slider_amount span.from').html(YayCurrency_Callback.Helper.formatPriceByCurrency(currentMinPrice, true, applyCurrency));
+                $('.price_slider_amount span.to').html(YayCurrency_Callback.Helper.formatPriceByCurrency(currentMaxPrice, true, applyCurrency));
+
+            }
+        },
+        handleFilterByPriceBlock: function (currencyID) {
+            // use Block gutenberg
+            if (!window.wc || !window.wc.priceFormat) {
+                return;
+            }
+            const filterPriceControls = $(yay_currency_data_args.blocks_data_args.filterPrice.class.wrapper);
+            const minorUnit = window.wc.priceFormat.getCurrency() ? 10 ** window.wc.priceFormat.getCurrency().minorUnit : 1;
+            if (filterPriceControls.length && filterPriceControls.find(yay_currency_data_args.blocks_data_args.filterPrice.class.controls).length) {
+                let count = 1;
+                let flagMarkPriceChange = false;
+
+                let intervalTime = setInterval(function () {
+                    let min_input_wrapper = $(yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceWrapper);
+                    let max_input_wrapper = $(yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceWrapper);
+
+                    if (min_input_wrapper.length && max_input_wrapper.length) {
+                        const price_filter_controls = $(yay_currency_data_args.blocks_data_args.filterPrice.class.filterSlideInput).parents(yay_currency_data_args.blocks_data_args.filterPrice.class.controls);
+                        const clone = price_filter_controls.clone();
+                        price_filter_controls.replaceWith(clone)
+
+                        const minPriceInput = min_input_wrapper.attr('aria-valuetext') ? +min_input_wrapper.attr('aria-valuetext') : false;
+                        if (minPriceInput) {
+                            $(yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceInput).val(YayCurrency_Callback.Helper.formatPriceByCurrency(minPriceInput, true));
+                            $(yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceInput).css('pointer-events', 'none');
+                        }
+
+                        const maxPriceInput = max_input_wrapper.attr('aria-valuetext') ? +max_input_wrapper.attr('aria-valuetext') : false;
+                        if (maxPriceInput) {
+                            $(yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceInput).val(YayCurrency_Callback.Helper.formatPriceByCurrency(maxPriceInput, true));
+                            $(yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceInput).css('pointer-events', 'none');
+                        }
+
+                        flagMarkPriceChange = true;
+
+                    }
+                    if (5 === count || flagMarkPriceChange) {
+                        clearInterval(intervalTime);
+                    }
+                    ++count;
+                }, 500);
+            }
+
+            $(document).on('input', yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceWrapper, function () {
+                const minPrice = $(this).attr('aria-valuetext') ? +$(this).attr('aria-valuetext') : false;
+                if (minPrice) {
+                    $(yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceInput).val(YayCurrency_Callback.Helper.formatPriceByCurrency(minPrice, true));
+                }
+            });
+
+            $(document).on('input', yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceWrapper, function () {
+                const maxPrice = $(this).attr('aria-valuetext') ? +$(this).attr('aria-valuetext') : false;
+                if (maxPrice) {
+                    $(yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceInput).val(YayCurrency_Callback.Helper.formatPriceByCurrency(maxPrice, true));
+                }
+
+            });
+            // Reset 
+            $(document).on('click', yay_currency_data_args.blocks_data_args.filterPrice.class.resetButton, function () {
+                let rangeMinDefault = $(yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceWrapper).attr('min'),
+                    rangeMaxDefault = $(yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceWrapper).attr('max');
+
+                if (rangeMinDefault && rangeMaxDefault) {
+                    rangeMinDefault = YayCurrency_Callback.Helper.handelConvertPrice(rangeMinDefault, currencyID, minorUnit);
+                    rangeMaxDefault = YayCurrency_Callback.Helper.handelConvertPrice(rangeMaxDefault, currencyID, minorUnit);
+                    $(yay_currency_data_args.blocks_data_args.filterPrice.class.minPriceInput).val(window.wc.priceFormat.formatPrice(rangeMinDefault));
+                    $(yay_currency_data_args.blocks_data_args.filterPrice.class.maxPriceInput).val(window.wc.priceFormat.formatPrice(rangeMaxDefault));
+                }
+
+            });
+            ///
         }
     };
 

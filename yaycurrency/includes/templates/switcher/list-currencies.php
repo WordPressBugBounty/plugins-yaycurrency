@@ -10,6 +10,7 @@ foreach ( $selected_currencies as $currency ) {
 	if ( $is_show_flag ) {
 		$country_code = $countries_code[ $currency->post_title ];
 		$flag_url     = Helper::get_flag_by_country_code( $country_code );
+		$flag_url     = apply_filters( 'yay_currency_get_flag_url_by_currency_code', $flag_url, $currency->post_title );
 		$html_flag    = '<span style="background-image: url(' . $flag_url . ')" class="yay-currency-flag ' . $switcher_size . '" data-country_code="' . $country_code . '"></span>';
 	}
 	$currency_name          = $is_show_currency_name ? $woo_currencies[ $currency->post_title ] : null;
