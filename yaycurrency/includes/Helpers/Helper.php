@@ -85,10 +85,11 @@ class Helper {
 		$classes = array(
 			// PLUGINS
 			'ThirdPartyPlugins',
+			'AdvancedProductFieldsForWooCommerce',
 			'PaymentPluginsBraintreeForWooCommerce',
-			'AdvancedProductFieldsProWooCommerce',
 			'QuantityDiscountsAndPricingForWoocommerce',
 			'BundlerPro',
+			'WPCProductBundles',
 			'B2BMarket',
 			'B2BKingPro',
 			'BookingsAppointmentsForWooCommercePremium',
@@ -133,6 +134,7 @@ class Helper {
 			'PaymentGatewayForPayPalWooCommerce',
 			'FunnelKitCart',
 			'TravelBooking',
+			'WooPaymentDiscounts',
 			//THEMES
 			'BreakdanceTheme',
 			'WoodmartTheme',
@@ -182,7 +184,7 @@ class Helper {
 
 	public static function get_yay_currencies_transient() {
 		$yay_currencies = get_transient( self::$YAY_CURRENCIES_TRANSIENT );
-		return $yay_currencies;
+		return apply_filters( 'yay_currency_transient_cache_currencies', $yay_currencies );
 	}
 
 	public static function delete_yay_currencies_transient() {
@@ -214,7 +216,7 @@ class Helper {
 				} else {
 					array_push( $dup_currency, $currency->post_title );
 				}
-			};
+			}
 			set_transient( self::$YAY_CURRENCIES_TRANSIENT, $currencies );
 		}
 
@@ -861,19 +863,19 @@ class Helper {
 			self::update_currency_meta( $currency_id, 'decimal_separator', $currency['decimalSeparator'] );
 			self::update_currency_meta( $currency_id, 'number_decimal', $currency['numberDecimal'] );
 		}
-		self::update_currency_meta( $currency_id, 'rounding_type', $currency ? $currency['roundingType'] : 'disabled' );
-		self::update_currency_meta( $currency_id, 'rounding_value', $currency ? $currency['roundingValue'] : 1 );
-		self::update_currency_meta( $currency_id, 'subtract_amount', $currency ? $currency['subtractAmount'] : 0 );
-		self::update_currency_meta( $currency_id, 'rate', $currency ? $currency['rate']['value'] : 1 );
-		self::update_currency_meta( $currency_id, 'rate_type', $currency ? $currency['rate']['type'] : 'auto' );
-		$fee_currency = $currency ? $currency['fee'] : array(
+		self::update_currency_meta( $currency_id, 'rounding_type', isset( $currency['roundingType'] ) ? $currency['roundingType'] : 'disabled' );
+		self::update_currency_meta( $currency_id, 'rounding_value', isset( $currency['roundingValue'] ) ? $currency['roundingValue'] : 1 );
+		self::update_currency_meta( $currency_id, 'subtract_amount', isset( $currency['subtractAmount'] ) ? $currency['subtractAmount'] : 0 );
+		self::update_currency_meta( $currency_id, 'rate', isset( $currency['rate'] ) ? $currency['rate']['value'] : 1 );
+		self::update_currency_meta( $currency_id, 'rate_type', isset( $currency['rate'] ) && isset( $currency['rate']['type'] ) ? $currency['rate']['type'] : 'auto' );
+		$fee_currency = isset( $currency['fee'] ) && isset( $currency['fee']['type'] ) ? $currency['fee'] : array(
 			'value' => '0',
 			'type'  => 'fixed',
 		);
 		self::update_currency_meta( $currency_id, 'fee', $fee_currency );
-		self::update_currency_meta( $currency_id, 'status', $currency ? $currency['status'] : '1' );
-		self::update_currency_meta( $currency_id, 'payment_methods', $currency ? $currency['paymentMethods'] : array( 'all' ) );
-		self::update_currency_meta( $currency_id, 'countries', $currency ? $currency['countries'] : array( 'default' ) );
+		self::update_currency_meta( $currency_id, 'status', isset( $currency['status'] ) ? $currency['status'] : '1' );
+		self::update_currency_meta( $currency_id, 'payment_methods', isset( $currency['paymentMethods'] ) ? $currency['paymentMethods'] : array( 'all' ) );
+		self::update_currency_meta( $currency_id, 'countries', isset( $currency['countries'] ) ? $currency['countries'] : array( 'default' ) );
 	}
 
 	public static function update_currency_meta( $currency_id, $meta_key, $meta_value ) {

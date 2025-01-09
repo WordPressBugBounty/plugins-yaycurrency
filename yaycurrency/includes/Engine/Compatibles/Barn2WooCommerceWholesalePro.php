@@ -223,7 +223,7 @@ class Barn2WooCommerceWholesalePro {
 
 	public function calculated_wholesale_price( $price, $product, $role ) {
 
-		if ( doing_filter( 'wcwp_calculated_wholesale_sale_price' ) ) {
+		if ( doing_filter( 'wcwp_calculated_wholesale_sale_price' ) || SupportHelper::detect_original_product_price( false, $price, $product ) ) {
 			return $price;
 		}
 
@@ -261,6 +261,10 @@ class Barn2WooCommerceWholesalePro {
 	}
 
 	public function calculated_wholesale_sale_price( $price, $product, $role ) {
+
+		if ( SupportHelper::detect_original_product_price( false, $price, $product ) ) {
+			return $price;
+		}
 
 		$sale_price    = $this->get_product_sale_pricing( $product, $role );
 		$regular_price = $this->calculated_wholesale_price( $price, $product, $role );

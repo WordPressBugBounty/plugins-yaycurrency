@@ -11,21 +11,24 @@ class WoodmartTheme {
 	use SingletonTrait;
 
 	private $apply_currency = array();
+	private $is_dis_checkout_diff_currency;
 
 	public function __construct() {
 
-		if ( 'woodmart' === wp_get_theme()->template ) {
+		if ( 'woodmart' === wp_get_theme()->template || 'WoodMart Theme/woodmart' === wp_get_theme()->template ) {
 
-			$this->apply_currency = YayCurrencyHelper::detect_current_currency();
+			$this->apply_currency                = YayCurrencyHelper::detect_current_currency();
+			$this->is_dis_checkout_diff_currency = YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency );
 
 			add_filter( 'yay_currency_get_price_with_conditions', array( $this, 'yay_currency_get_price_with_conditions' ), 10, 3 );
 
 			add_filter( 'yay_currency_detect_action_args', array( $this, 'yay_currency_detect_action_args' ), 10, 1 );
-			add_filter( 'yay_currency_get_price_by_currency', array( $this, 'get_round_price_by_currency' ), 10, 3 );
 
-			add_filter( 'woocommerce_cart_subtotal', array( $this, 'woocommerce_cart_subtotal' ), 9999, 3 );
-
-			add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'woodmart_cart_data' ), 9999 );
+			if ( ! $this->is_dis_checkout_diff_currency ) {
+				add_filter( 'yay_currency_get_price_by_currency', array( $this, 'get_round_price_by_currency' ), 10, 3 );
+				add_filter( 'woocommerce_cart_subtotal', array( $this, 'woocommerce_cart_subtotal' ), 9999, 3 );
+				add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'woodmart_cart_data' ), 9999 );
+			}
 
 			add_action( 'woodmart_shipping_progress_bar_amount', array( $this, 'woodmart_yay_currency_convert_price_limit' ), PHP_INT_MAX, 1 );
 
@@ -64,7 +67,7 @@ class WoodmartTheme {
 	}
 
 	public function yay_currency_detect_action_args( $action_args ) {
-		$woodmart_action = array( 'woodmart_quick_view', 'woodmart_ajax_search', 'woodmart_quick_shop', 'woodmart_update_frequently_bought_price', 'woodmart_ajax_add_to_cart' );
+		$woodmart_action = array( 'woodmart_quick_view', 'woodmart_ajax_search', 'woodmart_quick_shop', 'woodmart_update_frequently_bought_price', 'woodmart_ajax_add_to_cart', 'woodmart_get_products_tab_shortcode' );
 		$action_args     = array_unique( array_merge( $action_args, $woodmart_action ) );
 		return $action_args;
 	}

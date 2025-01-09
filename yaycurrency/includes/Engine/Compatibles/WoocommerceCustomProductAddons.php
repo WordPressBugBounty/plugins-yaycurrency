@@ -33,15 +33,7 @@ class WoocommerceCustomProductAddons {
 
 	public function remove_action_hook_woocommerce_cart_loaded_from_session() {
 		if ( class_exists( 'Acowebs\WCPA\Cart' ) ) {
-			global $wp_filter;
-			if ( isset( $wp_filter['woocommerce_cart_loaded_from_session']->callbacks[10] ) ) {
-				foreach ( $wp_filter['woocommerce_cart_loaded_from_session']->callbacks[10] as $callback ) {
-					if ( is_array( $callback['function'] ) && get_class( $callback['function'][0] ) === 'Acowebs\WCPA\Cart' && 'before_calculate_totals_session' === $callback['function'][1] ) {
-						remove_action( 'woocommerce_cart_loaded_from_session', array( $callback['function'][0], 'before_calculate_totals_session' ), 10 );
-						break;
-					}
-				}
-			}
+			remove_action( 'woocommerce_cart_loaded_from_session', array( 'Acowebs\WCPA\Cart', 'before_calculate_totals_session' ), 10 );
 		}
 	}
 

@@ -17,6 +17,13 @@
 
     $(document.body).trigger('wc_fragment_refresh');
 
+    // Use Param Url
+    if (yayCurrency.yay_currency_use_params) {
+      if (yayCurrency.yay_currency_param__name && currencyID) {
+        YayCurrency_Callback.Helper.setCookie(yayCurrency.cookie_switcher_name ?? 'yay_currency_do_change_switcher', currencyID, 1);
+      }
+    }
+
     $(window).on('load resize scroll', YayCurrency_Callback.Helper.switcherUpwards());
     YayCurrency_Callback.Helper.switcherAction();
     YayCurrency_Callback.Helper.reCalculateCartSubtotalCheckoutBlocksPage();

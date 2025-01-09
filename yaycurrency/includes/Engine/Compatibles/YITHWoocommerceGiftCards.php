@@ -14,7 +14,7 @@ class YITHWoocommerceGiftCards {
 	private $apply_currency = array();
 	public function __construct() {
 
-		if ( ! defined( 'YITH_YWGC_VERSION' ) ) {
+		if ( ! defined( 'YITH_YWGC_VERSION' ) || apply_filters( 'yay_currency_disable_convert_ywgc_amount', false ) ) {
 			return;
 		}
 		$this->apply_currency = YayCurrencyHelper::detect_current_currency();

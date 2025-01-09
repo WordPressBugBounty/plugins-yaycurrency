@@ -51,6 +51,9 @@ class WPFunnels {
 	}
 
 	public function order_bump_settings( $ob_settings, $funnel_id, $checkout_id ) {
+		if ( ! isset( $ob_settings[0]['discountPrice'] ) ) {
+			return $ob_settings;
+		}
 		$discount_price                  = $ob_settings[0]['discountPrice'];
 		$ob_settings[0]['discountPrice'] = YayCurrencyHelper::calculate_price_by_currency( $discount_price, false, $this->apply_currency );
 		return $ob_settings;

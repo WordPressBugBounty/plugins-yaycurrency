@@ -67,6 +67,9 @@ class Hooks {
 		add_action( 'yay_currency_handle_manual_order_totals', array( $this, 'handle_manual_order_totals' ), 10, 3 );
 		add_action( 'yay_currency_handle_manual_set_order_data', array( $this, 'handle_manual_set_order_data' ), 10, 3 );
 
+		// CALCULATE PRICE
+		add_filter( 'yay_currency_convert_price', array( $this, 'convert_price_callback' ), 10, 2 );
+		add_filter( 'yay_currency_revert_price', array( $this, 'revert_price_callback' ), 10, 2 );
 	}
 
 	public function get_yay_currency_rate( $rate = 1 ) {
@@ -510,5 +513,16 @@ class Hooks {
 
 		$order->save();
 
+	}
+
+	public function convert_price_callback( $price = 0, $apply_currency = array() ) {
+		$apply_currency = $apply_currency ? $apply_currency : YayCurrencyHelper::detect_current_currency();
+		$price          = YayCurrencyHelper::calculate_price_by_currency( $price, false, $apply_currency );
+		return $price;
+	}
+
+	public function revert_price_callback( $price = 0, $apply_currency = array() ) {
+		$price = YayCurrencyHelper::reverse_calculate_price_by_currency( $price, false, $apply_currency );
+		return $price;
 	}
 }

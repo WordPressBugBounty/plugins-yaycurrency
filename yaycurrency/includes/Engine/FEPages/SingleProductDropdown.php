@@ -20,7 +20,7 @@ class SingleProductDropdown {
 		$is_show_on_single_product_page = get_option( 'yay_currency_show_single_product_page', 1 );
 
 		if ( $is_show_on_single_product_page ) {
-			$switcherPositionOnSingleProductPage = get_option( 'yay_currency_switcher_position_on_single_product_page', 'after_description' );
+			$switcherPositionOnSingleProductPage = get_option( 'yay_currency_switcher_position_on_single_product_page', 'before_description' );
 			if ( 'after_description' === $switcherPositionOnSingleProductPage ) {
 				add_action( 'woocommerce_before_add_to_cart_form', array( $this, 'dropdown_price_in_different_currency' ) );
 			} else {

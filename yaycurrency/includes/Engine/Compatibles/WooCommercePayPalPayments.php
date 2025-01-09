@@ -34,6 +34,9 @@ class WooCommercePayPalPayments {
 		add_filter( 'woocommerce_paypal_args', array( $this, 'custom_request_paypal' ), 10, 2 );
 
 		if ( $this->is_dis_checkout_diff_currency ) {
+
+			add_filter( 'yay_currency_disable_fallback_checkout_conditions', array( $this, 'disable_fallback_checkout_conditions' ), 10, 1 );
+
 			add_filter( 'yay_currency_woocommerce_currency', array( $this, 'custom_currency_paypal_method' ), 10, 2 );
 			add_filter( 'yay_currency_is_original_default_currency', array( $this, 'is_original_default_currency' ), 20, 2 );
 
@@ -61,6 +64,15 @@ class WooCommercePayPalPayments {
 		}
 
 		return $currency;
+	}
+
+	public function disable_fallback_checkout_conditions( $flag ) {
+		$flag = false;
+		if ( wp_doing_ajax() && isset( $_COOKIE['ppc_paypal_checkout_page'] ) && isset( $_REQUEST['wc-ajax'] ) ) {
+			$wc_ajax_conditions = array( 'get_refreshed_fragments', 'wc_stripe_get_cart_details' );
+			$flag               = in_array( $_REQUEST['wc-ajax'], $wc_ajax_conditions );
+		}
+		return $flag;
 	}
 
 	public function custom_currency_paypal_method( $currency, $is_dis_checkout_diff_currency ) {

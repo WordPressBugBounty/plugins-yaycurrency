@@ -332,6 +332,19 @@ class SupportHelper {
 
 	}
 
+	public static function detect_ignore_price_conversion( $flag, $price, $product ) {
+		// Role Based Pricing for WooCommerce plugin & WooCommerce Bulk Discount plugin
+		if ( class_exists( 'AF_C_S_P_Price' ) || class_exists( 'Woo_Bulk_Discount_Plugin_t4m' ) || class_exists( 'FP_Lottery' ) ) {
+			$flag = true;
+		}
+
+		if ( defined( 'SUBSCRIPTIONS_FOR_WOOCOMMERCE_VERSION' ) ) {
+			$flag = true;
+		}
+
+		return apply_filters( 'yay_currency_before_calculate_totals_ignore_price_conversion', $flag, $price, $product );
+	}
+
 	public static function detect_original_product_price( $flag, $price, $product ) {
 
 		if ( empty( $price ) || ! is_numeric( $price ) || YayCurrencyHelper::is_wc_json_products() || class_exists( 'BM' ) ) {
@@ -342,16 +355,13 @@ class SupportHelper {
 			$flag = true;
 		}
 
-		if ( doing_filter( 'woocommerce_before_calculate_totals' ) ) {
-			// Role Based Pricing for WooCommerce plugin & WooCommerce Bulk Discount plugin
-			if ( class_exists( 'AF_C_S_P_Price' ) || class_exists( 'Woo_Bulk_Discount_Plugin_t4m' ) || class_exists( 'FP_Lottery' ) ) {
-				$flag = true;
-			}
-		}
-
 		// WC Fields Factory plugin
 		if ( class_exists( 'wcff' ) && doing_filter( 'woocommerce_get_cart_item_from_session' ) ) {
 			$flag = true;
+		}
+
+		if ( doing_filter( 'woocommerce_before_calculate_totals' ) ) {
+			$flag = self::detect_ignore_price_conversion( $flag, $price, $product );
 		}
 
 		return apply_filters( 'yay_currency_is_original_product_price', $flag, $price, $product );
@@ -395,5 +405,9 @@ class SupportHelper {
 			wp_deregister_script( 'es-vue-js' );
 		}
 		do_action( 'yay_currency_admin_deregister_script' );
+	}
+
+	public static function display_approximate_price_on_checkout() {
+		return apply_filters( 'yay_currency_display_approximate_price_on_checkout', false );
 	}
 }

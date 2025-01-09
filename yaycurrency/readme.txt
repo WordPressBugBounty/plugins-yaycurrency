@@ -2,8 +2,8 @@
 Contributors: YayCommerce
 Tags: currency switcher, multi currency, woocommerce, currency, currency converter, multicurrency
 Requires at least: 3.0
-Tested up to: 6.6.2
-Stable tag: 3.0.2
+Tested up to: 6.7
+Stable tag: 3.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,9 +13,13 @@ WooCommerce Multi-Currency made easy, powerful, and flexible.
 
 YayCurrency is a powerful **WooCommerce multi-currency plugin** that is feature-packed in a simplified user interface.
 
-It comes with advanced options like processing checkout in local currencies, recording order history in the currency selected by the customer, allowing you to view **WooCommerce reports** by currency, and much more.
-
 Instead of showing the prices in a single currency, it allows your customers to **switch currency in WooCommerce** and convert product prices to their preferred currency unit. You will be able to manage conversion fees, update exchange rates, set up pretty price rounding, and all that **without having to code**!
+
+**Key Features:**
+
+**Local Currency Checkout:** Customers can pay in their preferred currency.
+**Order Emails in Customer's Currency:** Accurate order records are displayed in emails for each customer's chosen currency.
+**Currency-Specific Reports:** Allows for insightful analysis of sales data across different currencies.
 
 🎮 [ADMIN DEMO](https://demo.yaycommerce.com/try-yaycurrency/) | [FRONT-END DEMO](https://demo.yaycommerce.com/yaycurrency/product/cap/) ⚡️
 
@@ -137,7 +141,7 @@ This WooCommerce multi currency free plugin works with all major B2B, wholesale,
 No worries, try out YayCurrency free version. It is the most beginner- and startup-friendly plugin in the world of WordPress. 
 
 
-Happy Switching! 💛 
+Happy Currency-Switching! 💛 
 
 == Installation ==
 1. Download the plugin from wordpress.org
@@ -171,6 +175,28 @@ To quickly get the answers, please attach screenshots of currently active WooCom
 5. Checkout permission for different payment methods and currencies 
 
 == Changelog ==
+
+= Jan 9, 2025 - Version 3.1.0 =
+- Fixed: Not saved N/A value when auto update exchange rate. --- Pro version only
+- Fixed: Compatible with WoodMart theme.
+- Fixed: Compatible with Woo Payment Discounts plugin.
+- Fixed: Compatible with YITH WooCommerce AddOns Extra Premium Options plugin.
+- Fixed: Compatible with WooCommerce Bookings plugin.
+- Fixed: Compatible with WC Price History plugin.
+- Fixed: Compatible with WooCommerce Simple Auction plugin.
+- Fixed: Compatible with Advanced Product Fields for WooCommerce plugin.
+- Fixed: Compatible with WooCommerce Tiered Price Table plugin.
+- Fixed: Compatible with the WooCommerce PayPal Payments plugin (the 'Disable the option to checkout in a different currency' feature) in the latest version, which was not working.
+- Fixed: Compatible with Quantity Discounts & Pricing For WooCommerce (Discount Table) plugin.
+- Fixed: The thousand separator and decimal separator do not support the use of the space character.
+- Fixed: PHP warning: Cannot modify header information - headers already send by ...
+- Added: yay_currency_by_country_code and yay_currency_by_billing_country_code are filter hooks to retrieve the currency based on the country code. --- Pro version only
+- Added: yay_currency_convert_price and yay_currency_revert_price are filter hooks to convert prices to the current currency and revert them to the default currency.
+- Added: yay_currency_product_price_with_caching filter hook support for the caching option. --- Pro version only
+- Added: Apply to Google Crawlers (or Bots) option. --- Pro version only 
+- Added: Show Approximate price option. --- Pro version only
+- Improved: Speed up page loading with transient cache when 'Auto Select Currency by Countries' is enabled. -- Pro version only
+- WC tested up to 9.5.1
 
 = Oct 4, 2024 - Version 3.0.2 =
 - WC tested up to 9.3.3  

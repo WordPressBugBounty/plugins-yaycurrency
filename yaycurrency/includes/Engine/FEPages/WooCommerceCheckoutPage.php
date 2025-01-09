@@ -292,7 +292,7 @@ class WooCommerceCheckoutPage {
 		$formatted_fallback_currency_shipping_fee = YayCurrencyHelper::calculate_price_by_currency_html( $fallback_currency, $shipping_fee );
 		$converted_approximately                  = apply_filters( 'yay_currency_checkout_converted_approximately', true, $apply_currency );
 		if ( ! $converted_approximately ) {
-			return '' . $method_label . ': ' . $formatted_fallback_currency_shipping_fee;
+			return $method_label . ': ' . $formatted_fallback_currency_shipping_fee;
 		}
 
 		$converted_shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $shipping_fee, true, $apply_currency );
@@ -313,9 +313,13 @@ class WooCommerceCheckoutPage {
 			}
 		}
 
-		$formatted_shipping_fee      = YayCurrencyHelper::format_price( $converted_shipping_fee );
+		$formatted_shipping_fee = YayCurrencyHelper::format_price( $converted_shipping_fee );
+		//  Display approximate price only on the checkout page
+		if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			return $method_label . ': ' . $formatted_shipping_fee;
+		}
 		$formatted_shipping_fee_html = YayCurrencyHelper::converted_approximately_html( $formatted_shipping_fee );
-		$label                       = '' . $method_label . ': ' . $formatted_fallback_currency_shipping_fee . $formatted_shipping_fee_html;
+		$label                       = $method_label . ': ' . $formatted_fallback_currency_shipping_fee . $formatted_shipping_fee_html;
 		return $label;
 	}
 
@@ -333,6 +337,11 @@ class WooCommerceCheckoutPage {
 		if ( YayCurrencyHelper::enable_rounding_currency( $apply_currency ) ) {
 			$formatted_discount_price = apply_filters( 'yay_currency_checkout_converted_discount_price', $formatted_discount_price, $coupon, $apply_currency );
 		}
+		//  Display approximate price only on the checkout page
+		if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			return '-' . $formatted_discount_price;
+		}
+
 		$formatted_discount_price_html = YayCurrencyHelper::converted_approximately_html( $formatted_discount_price );
 		$custom_coupon_html            = '-' . $discount_amount_html . $formatted_discount_price_html . substr( $coupon_html, strpos( $coupon_html, '<a' ) ) . '';
 		return $custom_coupon_html;

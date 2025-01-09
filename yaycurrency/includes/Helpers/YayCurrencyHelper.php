@@ -68,7 +68,7 @@ class YayCurrencyHelper {
 	public static function disable_fallback_option_in_checkout_page( $apply_currency = array() ) {
 		$is_dis_checkout_diff_currency = self::is_dis_checkout_diff_currency( $apply_currency );
 		$checkout_blocks               = apply_filters( 'yay_currency_is_checkout_blocks', false ); // checkout use gutenberg blocks
-		$is_checkout_page              = is_checkout() || $checkout_blocks;
+		$is_checkout_page              = is_checkout() || $checkout_blocks || apply_filters( 'yay_currency_disable_fallback_checkout_conditions', false );
 		$order_received_page           = $is_checkout_page && is_wc_endpoint_url( 'order-pay' ) || is_wc_endpoint_url( 'order-received' );
 		return $is_dis_checkout_diff_currency && ( $is_checkout_page || $order_received_page );
 	}
@@ -173,14 +173,20 @@ class YayCurrencyHelper {
 			'thousandSeparator'    => isset( $currency_meta['thousand_separator'][0] ) ? $currency_meta['thousand_separator'][0] : Helper::default_thousand_separator(),
 			'decimalSeparator'     => isset( $currency_meta['decimal_separator'][0] ) ? $currency_meta['decimal_separator'][0] : Helper::default_decimal_separator(),
 			'numberDecimal'        => isset( $currency_meta['number_decimal'][0] ) ? $currency_meta['number_decimal'][0] : Helper::default_price_num_decimals(),
-			'roundingType'         => $currency_meta['rounding_type'][0],
-			'roundingValue'        => $currency_meta['rounding_value'][0],
-			'subtractAmount'       => $currency_meta['subtract_amount'][0],
-			'rate'                 => $currency_meta['rate'][0],
-			'fee'                  => maybe_unserialize( $currency_meta['fee'][0] ),
-			'status'               => $currency_meta['status'][0],
-			'paymentMethods'       => maybe_unserialize( $currency_meta['payment_methods'][0] ),
-			'countries'            => maybe_unserialize( $currency_meta['countries'][0] ),
+			'roundingType'         => isset( $currency_meta['rounding_type'] ) ? $currency_meta['rounding_type'][0] : 'disabled',
+			'roundingValue'        => isset( $currency_meta['rounding_value'] ) ? $currency_meta['rounding_value'][0] : 1,
+			'subtractAmount'       => isset( $currency_meta['subtract_amount'] ) ? $currency_meta['subtract_amount'][0] : 0,
+			'rate'                 => isset( $currency_meta['rate'] ) ? $currency_meta['rate'][0] : array(
+				'type'  => 'auto',
+				'value' => '1',
+			),
+			'fee'                  => isset( $currency_meta['fee'] ) ? maybe_unserialize( $currency_meta['fee'][0] ) : array(
+				'value' => '0',
+				'type'  => 'fixed',
+			),
+			'status'               => isset( $currency_meta['status'] ) ? $currency_meta['status'][0] : '1',
+			'paymentMethods'       => isset( $currency_meta['payment_methods'] ) ? maybe_unserialize( $currency_meta['payment_methods'][0] ) : array( 'all' ),
+			'countries'            => isset( $currency_meta['countries'] ) ? maybe_unserialize( $currency_meta['countries'][0] ) : array( 'default' ),
 			'symbol'               => self::get_symbol_by_currency_code( $currency->post_title ),
 		);
 
@@ -196,9 +202,11 @@ class YayCurrencyHelper {
 		return $apply_currency;
 	}
 
-	public static function set_cookie_currency_switcher( $selected_currency_id ) {
+	public static function set_cookie_currency_switcher( $selected_currency_id, $do_set_cookie = false ) {
 		$cookie_switcher_name = self::get_cookie_name( 'switcher' );
-		self::set_cookie( $cookie_switcher_name, $selected_currency_id );
+		if ( $do_set_cookie ) {
+			self::set_cookie( $cookie_switcher_name, $selected_currency_id );
+		}
 		$_COOKIE[ $cookie_switcher_name ] = $selected_currency_id;
 	}
 
@@ -488,28 +496,34 @@ class YayCurrencyHelper {
 	}
 
 	public static function round_price_by_currency( $price = 0, $apply_currency = array() ) {
-		if ( $price > 0 && ( isset( $apply_currency['roundingType'] ) && 'disabled' !== $apply_currency['roundingType'] ) ) {
-			$rounding_type   = $apply_currency['roundingType'];
-			$rounding_value  = floatval( $apply_currency['roundingValue'] );
-			$subtract_amount = floatval( $apply_currency['subtractAmount'] );
 
-			switch ( $rounding_type ) {
+		if ( ! $price || $price <= 0 ) {
+			return $price;
+		}
+
+		if ( isset( $apply_currency['roundingType'] ) && 'disabled' !== $apply_currency['roundingType'] ) {
+			$rounding_value  = isset( $apply_currency['roundingValue'] ) ? floatval( $apply_currency['roundingValue'] ) : 1;
+			$subtract_amount = isset( $apply_currency['subtractAmount'] ) ? floatval( $apply_currency['subtractAmount'] ) : 0;
+			switch ( $apply_currency['roundingType'] ) {
 				case 'up':
 					$price = ceil( $price / $rounding_value ) * $rounding_value - $subtract_amount;
-					return $price;
+					break;
 				case 'down':
 					$price = floor( $price / $rounding_value ) * $rounding_value - $subtract_amount;
-					return $price;
+					break;
 				case 'nearest':
 					$price = round( $price / $rounding_value ) * $rounding_value - $subtract_amount;
-					return $price;
+					break;
 				default:
-					return;
+					break;
 			}
+		} elseif ( apply_filters( 'yay_currency_round_product_price', true ) ) {
+			$round_type     = apply_filters( 'yay_currency_round_type', PHP_ROUND_HALF_UP );
+			$number_decimal = isset( $apply_currency['numberDecimal'] ) ? $apply_currency['numberDecimal'] : get_option( 'woocommerce_price_num_decimals' );
+			$price          = round( $price, $number_decimal, $round_type );
 		}
 
 		return $price;
-
 	}
 
 	public static function calculate_price_by_currency( $price = 0, $exclude = false, $apply_currency = array() ) {

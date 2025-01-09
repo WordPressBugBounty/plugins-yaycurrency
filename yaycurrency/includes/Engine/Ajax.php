@@ -52,22 +52,25 @@ class Ajax {
 					'currencySymbol'    => html_entity_decode( get_woocommerce_currency_symbol( $currency->post_title ) ),
 					'currencyPosition'  => $currency_meta['currency_position'][0],
 					'thousandSeparator' => $currency_meta['thousand_separator'][0],
-					'decimalSeparator'  => $currency_meta['decimal_separator'][0],
-					'numberDecimal'     => $currency_meta['number_decimal'][0],
+					'decimalSeparator'  => isset( $currency_meta['decimal_separator'] ) ? $currency_meta['decimal_separator'][0] : '.',
+					'numberDecimal'     => isset( $currency_meta['number_decimal'] ) ? $currency_meta['number_decimal'][0] : '0',
 					'rate'              =>
 						array(
-							'type'  => $currency_meta['rate_type'] && ! empty( $currency_meta['rate_type'][0] ) ? $currency_meta['rate_type'][0] : 'auto',
-							'value' => $currency_meta['rate'][0],
+							'type'  => isset( $currency_meta['rate_type'] ) ? $currency_meta['rate_type'][0] : 'auto',
+							'value' => isset( $currency_meta['rate'] ) ? $currency_meta['rate'][0] : '1',
 						),
-					'fee'               => maybe_unserialize( $currency_meta['fee'][0] ),
-					'status'            => $currency_meta['status'][0],
-					'paymentMethods'    => maybe_unserialize( $currency_meta['payment_methods'][0] ),
-					'countries'         => maybe_unserialize( $currency_meta['countries'][0] ),
+					'fee'               => isset( $currency_meta['fee'] ) ? maybe_unserialize( $currency_meta['fee'][0] ) : array(
+						'value' => '0',
+						'type'  => 'fixed',
+					),
+					'status'            => isset( $currency_meta['status'] ) ? $currency_meta['status'][0] : '1',
+					'paymentMethods'    => isset( $currency_meta['payment_methods'] ) ? maybe_unserialize( $currency_meta['payment_methods'][0] ) : array( 'all' ),
+					'countries'         => isset( $currency_meta['countries'] ) ? maybe_unserialize( $currency_meta['countries'][0] ) : array( 'default' ),
 					'default'           => Helper::default_currency_code() === $currency->post_title ? true : false,
 					'isLoading'         => false,
-					'roundingType'      => $currency_meta['rounding_type'][0] ? $currency_meta['rounding_type'][0] : 'disabled',
-					'roundingValue'     => $currency_meta['rounding_value'][0] ? $currency_meta['rounding_value'][0] : 1,
-					'subtractAmount'    => $currency_meta['subtract_amount'][0] ? $currency_meta['subtract_amount'][0] : 0,
+					'roundingType'      => isset( $currency_meta['rounding_type'] ) ? $currency_meta['rounding_type'][0] : 'disabled',
+					'roundingValue'     => isset( $currency_meta['rounding_value'] ) ? $currency_meta['rounding_value'][0] : 1,
+					'subtractAmount'    => isset( $currency_meta['subtract_amount'] ) ? $currency_meta['subtract_amount'][0] : 0,
 				);
 				array_push( $this->converted_currencies, $converted_currency );
 			}
@@ -100,7 +103,7 @@ class Ajax {
 		}
 		$is_checkout_different_currency           = get_option( 'yay_currency_checkout_different_currency', 0 );
 		$is_show_on_single_product_page           = get_option( 'yay_currency_show_single_product_page', 1 );
-		$switcher_position_on_single_product_page = get_option( 'yay_currency_switcher_position_on_single_product_page', 'after_description' );
+		$switcher_position_on_single_product_page = get_option( 'yay_currency_switcher_position_on_single_product_page', 'before_description' );
 		$is_show_flag_in_switcher                 = get_option( 'yay_currency_show_flag_in_switcher', 1 );
 		$is_show_currency_name_in_switcher        = get_option( 'yay_currency_show_currency_name_in_switcher', 1 );
 		$is_show_currency_symbol_in_switcher      = get_option( 'yay_currency_show_currency_symbol_in_switcher', 1 );
@@ -240,8 +243,8 @@ class Ajax {
 
 
 	public function set_currency_manage_settings( $currencies ) {
-		$currencies_array = Helper::sanitize_array( $currencies );
-		foreach ( $currencies_array as $key => $currency ) {
+		// $currencies_array = Helper::sanitize_array( $currencies );
+		foreach ( $currencies as $key => $currency ) {
 			if ( isset( $currency['ID'] ) ) {
 				$update_currency = array(
 					'ID'         => $currency['ID'],

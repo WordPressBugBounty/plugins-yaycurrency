@@ -90,8 +90,13 @@ class ThirdPartyPlugins {
 			add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 10, 3 );
 			add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'tier_pricing_table_product_price_3rd_with_condition' ), 10, 2 );
 			add_filter( 'tier_pricing_table/price/product_price_rules', array( $this, 'custom_tier_pricing_product_price_rules' ), 10, 4 );
+			add_filter( 'tiered_pricing_table/price/product_price_rules', array( $this, 'custom_tier_pricing_product_price_rules' ), 10, 4 );
 		}
 
+		// WC Price History. Link plugin: https://github.com/kkarpieszuk/wc-price-history
+		if ( defined( 'WC_PRICE_HISTORY_VERSION' ) ) {
+			add_filter( 'wc_price_history_lowest_price_html_raw_value_taxed', array( $this, 'convert_wc_price_history_lowest_price' ), 10, 2 );
+		}
 		// BACKEND REPORT
 
 		// Users Insights. Link plugin: https://usersinsights.com/
@@ -278,6 +283,13 @@ class ThirdPartyPlugins {
 			return $converted_rules;
 		}
 		return $rules;
+	}
+
+	public function convert_wc_price_history_lowest_price( $lowest_price, $product ) {
+		if ( is_admin() ) {
+			return $lowest_price;
+		}
+		return apply_filters( 'yay_currency_convert_price', $lowest_price );
 	}
 
 	// Users Insights.

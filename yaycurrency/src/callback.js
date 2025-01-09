@@ -534,31 +534,35 @@
             }
             // compatible with WooCommerce PayPal Payments plugin
             if (window.yayCurrency.ppc_paypal) {
-                const ppc_cart_cookie_name = 'ppc_paypal_cart_or_product_page';
-                const cart_product_cookie = YayCurrency_Callback.Helper.getCookie(ppc_cart_cookie_name);
-                if ('1' === yayCurrency.cart_page || '1' === yayCurrency.product_page) {
-                    if (!cart_product_cookie) {
-                        YayCurrency_Callback.Helper.setCookie(ppc_cart_cookie_name, 'yes', +yayCurrency.cookie_lifetime_days);
-                    }
-                } else {
-                    if (cart_product_cookie) {
-                        YayCurrency_Callback.Helper.deleteCookie(ppc_cart_cookie_name);
-                    }
+                //Refresh mini cart - not on checkout page (checkout_diff_currency)
+                if (yayCurrency.checkout_diff_currency && '1' === yayCurrency.checkout_diff_currency) {
+                    jQuery(document).ready(function ($) {
+                        if (!yayCurrency.checkout_page || '1' !== yayCurrency.checkout_page) {
+                            $(document.body).trigger('wc_fragment_refresh');
+                        }
+                    });
                 }
 
+                const setOrDeleteYayPaypalCookie = (cookieName, condition) => {
+                    if (condition) {
+                        YayCurrency_Callback.Helper.setCookie(cookieName, 'yes', +yayCurrency.cookie_lifetime_days);
+                    } else if (YayCurrency_Callback.Helper.getCookie(cookieName)) {
+                        YayCurrency_Callback.Helper.deleteCookie(cookieName);
+                    }
+                };
+
+                const updateYayPaypalCookies = () => {
+                    setOrDeleteYayPaypalCookie('ppc_paypal_cart_or_product_page', '1' === yayCurrency.cart_page || '1' === yayCurrency.product_page);
+                    setOrDeleteYayPaypalCookie('ppc_paypal_checkout_page', yayCurrency.checkout_page && '1' === yayCurrency.checkout_page);
+                };
+
+                // Initial cookie setup
+                updateYayPaypalCookies();
+
+                // Update cookies on page visibility change
                 $(document).on('visibilitychange', function () {
                     if ('visible' === document.visibilityState) {
-                        const cart_product_cookie = YayCurrency_Callback.Helper.getCookie(ppc_cart_cookie_name);
-                        if ('1' === yayCurrency.cart_page || '1' === yayCurrency.product_page) {
-                            if (!cart_product_cookie) {
-                                YayCurrency_Callback.Helper.setCookie(ppc_cart_cookie_name, 'yes', +yayCurrency.cookie_lifetime_days);
-                            }
-                        } else {
-                            if (cart_product_cookie) {
-                                YayCurrency_Callback.Helper.deleteCookie(ppc_cart_cookie_name);
-                            }
-                        }
-
+                        updateYayPaypalCookies();
                     }
                 });
             }

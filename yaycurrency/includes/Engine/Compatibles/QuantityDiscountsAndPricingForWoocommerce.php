@@ -30,10 +30,8 @@ class QuantityDiscountsAndPricingForWoocommerce {
 
 		add_filter( 'woocommerce_cart_item_price', array( $this, 'custom_woocommerce_cart_item_price' ), PHP_INT_MAX, 3 );
 
-		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
-
-		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'subscription_get_price_renew' ), 10, 2 );
-
+		add_action( 'wp_ajax_yay_currency_plgfyqdp_quantity_discount_convert', array( $this, 'handle_ajax_quantity_discount_convert' ) );
+		add_action( 'wp_ajax_nopriv_yay_currency_plgfyqdp_quantity_discount_convert', array( $this, 'handle_ajax_quantity_discount_convert' ) );
 	}
 
 	public function is_original_product_price( $flag, $price, $product ) {
@@ -43,18 +41,7 @@ class QuantityDiscountsAndPricingForWoocommerce {
 		return $flag;
 	}
 
-	public function product_addons_set_cart_contents( $cart_contents, $key, $cart_item, $apply_currency ) {
 
-		if ( isset( $cart_item['new_price'] ) && isset( $cart_item['old_price'] ) && isset( $cart_item['plugify_discount'] ) && ! doing_action( 'woocommerce_after_cart_item_quantity_update' ) ) {
-			$old_price = YayCurrencyHelper::calculate_price_by_currency( $cart_item['old_price'], false, $this->apply_currency );
-			$new_price = YayCurrencyHelper::calculate_price_by_currency( $cart_item['new_price'], false, $this->apply_currency );
-
-			SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'yay_currency_plgfyqdp_old_price', $old_price );
-			SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'yay_currency_plgfyqdp_new_price', $new_price );
-
-		}
-
-	}
 
 	public function custom_woocommerce_cart_item_price( $price, $cart_item, $cart_item_key ) {
 
@@ -98,14 +85,26 @@ class QuantityDiscountsAndPricingForWoocommerce {
 		return $price;
 	}
 
-	public function subscription_get_price_renew( $price, $product ) {
+	public function handle_ajax_quantity_discount_convert() {
+		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
 
-		$yay_check_discount = SupportHelper::get_cart_item_objects_property( $product, 'yay_currency_plgfyqdp_new_price' );
-
-		if ( $yay_check_discount ) {
-			return $yay_check_discount;
+		if ( ! $nonce || ( ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-nonce' ) && is_user_logged_in() ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nonce invalid', 'yay-currency' ) ) );
 		}
 
-		return $price;
+		if ( isset( $_POST['prices'] ) && is_array( $_POST['prices'] ) ) {
+			$plugify_prices   = map_deep( wp_unslash( $_POST['prices'] ), 'sanitize_text_field' );
+			$converted_prices = array_map(
+				function ( $price ) {
+					$converted_price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
+					return YayCurrencyHelper::format_price( $converted_price );
+				},
+				$plugify_prices
+			);
+
+			wp_send_json_success( $converted_prices );
+		} else {
+			wp_send_json_error( 'Invalid data' );
+		}
 	}
 }
