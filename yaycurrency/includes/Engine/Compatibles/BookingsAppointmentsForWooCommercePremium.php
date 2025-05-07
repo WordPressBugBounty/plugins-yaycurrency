@@ -13,21 +13,24 @@ class BookingsAppointmentsForWooCommercePremium {
 	use SingletonTrait;
 
 	private $apply_currency = array();
-	protected $offer_controller;
 
 	public function __construct() {
 
-		if ( ! defined( 'PH_BOOKINGS_PLUGIN_VERSION' ) ) {
-			return;
+		if ( defined( 'PH_BOOKINGS_PLUGIN_VERSION' ) || class_exists( 'Woocommerce_Booking' ) ) {
+			$this->apply_currency = YayCurrencyHelper::detect_current_currency();
+			// Link plugin: https://www.pluginhive.com/product/woocommerce-booking-and-appointments/
+			if ( defined( 'PH_BOOKINGS_PLUGIN_VERSION' ) ) {
+				add_filter( 'ph_bookings_get_client_currency', array( $this, 'ph_bookings_get_client_currency' ), 99, 1 );
+				add_filter( 'phive_booking_cost', array( $this, 'phive_booking_cost' ), 99, 4 );
+				add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_cart_item_data_booking_infos_with_cart_item' ), 10, 3 );
+				add_action( 'woocommerce_get_cart_item_from_session', array( $this, 'woocommerce_get_cart_item_from_session' ), 20, 3 );
+			}
+			// Link plugin: https://www.tychesoftwares.com/products/woocommerce-booking-and-appointment-plugin/
+			if ( class_exists( 'Woocommerce_Booking' ) ) {
+				add_filter( 'bkap_final_price_json_data', array( $this, 'bkap_final_price_json_data' ), 20, 2 );
+			}
 		}
 
-		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
-
-		add_filter( 'ph_bookings_get_client_currency', array( $this, 'ph_bookings_get_client_currency' ), 99, 1 );
-		add_filter( 'phive_booking_cost', array( $this, 'phive_booking_cost' ), 99, 4 );
-
-		add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_cart_item_data_booking_infos_with_cart_item' ), 10, 3 );
-		add_action( 'woocommerce_get_cart_item_from_session', array( $this, 'woocommerce_get_cart_item_from_session' ), 20, 3 );
 	}
 
 	public function ph_bookings_get_client_currency( $currency ) {
@@ -64,5 +67,14 @@ class BookingsAppointmentsForWooCommercePremium {
 			$cart_item['data']->set_price( $booked_price );
 		}
 		return $cart_item;
+	}
+
+	public function bkap_final_price_json_data( $wp_send_json, $product_id ) {
+		if ( isset( $wp_send_json['bkap_price'] ) && isset( $wp_send_json['total_price_calculated'] ) ) {
+			$total_price_calculated     = $wp_send_json['total_price_calculated'];
+			$formatted_price            = YayCurrencyHelper::calculate_price_by_currency_html( $this->apply_currency, $total_price_calculated );
+			$wp_send_json['bkap_price'] = get_option( 'book_price-label' ) . ' ' . $formatted_price;
+		}
+		return $wp_send_json;
 	}
 }

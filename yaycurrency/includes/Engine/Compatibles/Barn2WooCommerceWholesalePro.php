@@ -15,6 +15,7 @@ class Barn2WooCommerceWholesalePro {
 
 	private $apply_currency  = array();
 	private $currencies_data = array();
+	private $wdm_plugin      = false;
 	public function __construct() {
 
 		if ( ! class_exists( 'Barn2\Plugin\WC_Wholesale_Pro\Controller\Wholesale_Price' ) ) {
@@ -42,6 +43,24 @@ class Barn2WooCommerceWholesalePro {
 
 		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 
+		if ( function_exists( 'Barn2\Plugin\Discount_Manager\wdm' ) ) {
+			$this->wdm_plugin = true;
+			add_filter( 'yay_currency_before_calculate_totals_ignore_price_conversion', array( $this, 'before_calculate_totals_ignore_price_conversion' ), 10, 3 );
+			if ( class_exists( 'Barn2\Plugin\Discount_Manager\Integrations\Product_Options' ) ) {
+				add_filter( 'yay_currency_get_product_price_default_by_cart_item', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
+				add_filter( 'woocommerce_cart_item_price', array( $this, 'display_discounted_price_in_cart' ), 999, 3 );
+
+				if ( YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency ) ) {
+					add_filter( 'wdm_cart_total_discount_amount_output', array( $this, 'wdm_cart_total_discount_amount_output' ), 999, 2 );
+				}
+			}
+		}
+
+		if ( function_exists( 'Barn2\Plugin\WC_Wholesale_Pro\woocommerce_wholesale_pro' ) ) {
+			add_filter( 'woocommerce_get_price_html', array( $this, 'woocommerce_get_price_html' ), 100, 2 );
+		}
+		// manual defined on WooCommerce Discount Manager - Barn2
+		add_filter( 'wdm_wwp_discounted_price', array( $this, 'wdm_wwp_discounted_price' ), 10, 3 );
 	}
 
 	public function product_addons_set_cart_contents( $cart_contents, $key, $cart_item, $apply_currency ) {
@@ -288,5 +307,77 @@ class Barn2WooCommerceWholesalePro {
 		}
 		return $price;
 
+	}
+
+	public function before_calculate_totals_ignore_price_conversion( $flag, $price, $product ) {
+
+		if ( $this->wdm_plugin ) {
+			$flag = true;
+		}
+		return $flag;
+	}
+
+	private function check_discounted_price_exists( $cart_item ) {
+		if ( ! function_exists( '\Barn2\Plugin\Discount_Manager\wdm' ) ) {
+			return false;
+		}
+
+		$product_id  = ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : $cart_item['product_id'];
+		$discount_id = \Barn2\Plugin\Discount_Manager\wdm()->cache()->get_tracked_discount_id_by_product( $product_id );
+		if ( $discount_id ) {
+			return true;
+		}
+		return false;
+	}
+
+	public function get_product_price_default_by_cart_item( $price, $cart_item ) {
+		if ( self::check_discounted_price_exists( $cart_item ) && isset( $cart_item['_wdm']['new_price'] ) ) {
+			$price = $cart_item['_wdm']['new_price'];
+		}
+		return $price;
+	}
+
+	public function display_discounted_price_in_cart( $price, $cart_item, $cart_item_key ) {
+		if ( self::check_discounted_price_exists( $cart_item ) ) {
+			$original_price = apply_filters( 'yay_currency_convert_price', $cart_item['_wdm']['original_price'], $this->apply_currency );
+			$sale_price     = apply_filters( 'yay_currency_convert_price', $cart_item['_wdm']['new_price'], $this->apply_currency );
+			$price          = wc_format_sale_price( $original_price, $sale_price );
+		}
+
+		return $price;
+
+	}
+
+	public function wdm_cart_total_discount_amount_output( $output, $discount_total ) {
+
+		if ( ! is_checkout() ) {
+			return $output;
+		}
+		$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
+		if ( ! $converted_approximately ) {
+			return $output;
+		}
+		$label                  = __( 'Total savings', 'woocommerce-discount-manager' );
+		$convert_discount_total = YayCurrencyHelper::calculate_price_by_currency_html( $this->apply_currency, $discount_total );
+		$converted_total_html   = YayCurrencyHelper::converted_approximately_html( $convert_discount_total, true );
+		$html_content           = wc_price( $discount_total ) . $converted_total_html;
+		$output                 = '<tr><th>' . $label . '</th><td data-title="' . $label . '">' . wp_kses_post( $html_content ) . '</td></tr>';
+		return $output;
+	}
+
+	public function woocommerce_get_price_html( $price_html, $product ) {
+		// Barn2 WooCommerce Quick View Pro
+		if ( ! doing_filter( 'wc_quick_view_pro_quick_view_product_details' ) ) {
+			return $price_html;
+		}
+
+		$price_handler = \Barn2\Plugin\WC_Wholesale_Pro\woocommerce_wholesale_pro()->get_service( 'price_handler' );
+		$price_html    = $price_handler->get_price_html( $price_html, $product );
+		return $price_html;
+	}
+
+	public function wdm_wwp_discounted_price( $discounted_price, $product, $role ) {
+		$discounted_price = apply_filters( 'yay_currency_convert_price', $discounted_price, $this->apply_currency );
+		return $discounted_price;
 	}
 }

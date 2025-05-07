@@ -108,6 +108,7 @@ class Helper {
 			'WooCommerceProductAddons',
 			'WooCommerceProductAddOnsUltimate',
 			'Barn2WooCommerceWholesalePro',
+			'Barn2WooCommerceDiscountManager',
 			'HivePress',
 			'WPFunnels',
 			'LearnPress',
@@ -128,6 +129,7 @@ class Helper {
 			'YayExtra',
 			'WooCommerceDeposits',
 			'WooCommerceBookings',
+			'WooCommerceAppointments',
 			'TranslatePressMultilingual',
 			'WooCommerceTeraWallet',
 			'WooCommerceRequestAQuote',
@@ -305,6 +307,7 @@ class Helper {
 			'EGP' => 'eg',
 			'ERN' => 'er',
 			'ETB' => 'et',
+			'ETH' => 'eth',
 			'EUR' => 'eu',
 			'FJD' => 'fj',
 			'FKP' => 'fk',
@@ -957,21 +960,6 @@ class Helper {
 
 		return $rest_route;
 	}
-
-	public static function detect_checkout_blocks_page() {
-
-		$rest_route = self::get_rest_route_via_rest_api();
-		if ( ! $rest_route ) {
-			return false;
-		}
-
-		if ( in_array( $rest_route, array( '/wc/store/v1/batch', '/wc/store/v1/checkout' ), true ) && isset( $_REQUEST['_locale'] ) && isset( $_COOKIE['yay_checkout_blocks_page'] ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
 
 	public static function change_existing_currency_symbol( $apply_currency = array(), $currency_symbol = '' ) {
 		if ( ! $apply_currency ) {

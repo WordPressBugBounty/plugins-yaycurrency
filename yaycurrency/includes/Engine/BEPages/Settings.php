@@ -31,6 +31,11 @@ class Settings {
 		add_filter( 'plugin_action_links_' . YAY_CURRENCY_BASE_NAME, array( $this, 'addActionLinks' ) );
 		add_filter( 'plugin_row_meta', array( $this, 'addDocumentSupportLinks' ), 10, 2 );
 		add_filter( 'woocommerce_general_settings', array( $this, 'add_multi_currencies_button' ), 10, 1 );
+
+		// Cryptocurrencies
+		add_filter( 'woocommerce_currencies', array( $this, 'add_cryptocurrencies_to_woocommerce_currencies' ) );
+		add_filter( 'woocommerce_currency_symbols', array( $this, 'add_cryptocurrencies_to_woocommerce_currency_symbols' ) );
+
 	}
 
 	public function register_post_type() {
@@ -165,5 +170,20 @@ class Settings {
 			$update_sections[] = $section;
 		}
 		return $update_sections;
+	}
+
+	public function add_cryptocurrencies_to_woocommerce_currencies( $currencies ) {
+		if ( ! isset( $currencies['ETH'] ) ) {
+			$currencies['ETH'] = 'Ethereum';
+		}
+
+		return $currencies;
+	}
+
+	public function add_cryptocurrencies_to_woocommerce_currency_symbols( $currency_symbols ) {
+		if ( ! isset( $currency_symbols['ETH'] ) ) {
+			$currency_symbols['ETH'] = 'Ξ';
+		}
+		return $currency_symbols;
 	}
 }

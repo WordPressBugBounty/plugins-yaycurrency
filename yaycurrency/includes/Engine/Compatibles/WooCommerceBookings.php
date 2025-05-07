@@ -184,23 +184,6 @@ class WooCommerceBookings {
 		return $rest_route;
 	}
 
-	public function detect_cart_checkout_by_currency_via_rest_api() {
-		$rest_route = self::get_rest_route_via_rest_api();
-
-		if ( ! $rest_route ) {
-			return false;
-		}
-
-		$rest_route_args = array( '/wc/store/v1/checkout', '/wc/store/v1/batch' );
-
-		if ( in_array( $rest_route, $rest_route_args, true ) && isset( $_REQUEST['_locale'] ) ) {
-			return true;
-		}
-
-		return false;
-
-	}
-
 	public function is_original_default_currency( $flag, $apply_currency ) {
 
 		if ( self::detect_checkout_default_via_rest_api( $apply_currency ) ) {
@@ -231,7 +214,7 @@ class WooCommerceBookings {
 
 	public function detect_3rd_plugins_conditions( $flag, $product, $apply_currency ) {
 
-		if ( self::detect_cart_checkout_by_currency_via_rest_api() ) {
+		if ( SupportHelper::detect_rest_api_doing() ) {
 			$flag = true;
 		}
 

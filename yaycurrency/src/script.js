@@ -30,5 +30,11 @@
 
     // Convert
     YayCurrency_Callback.Helper.currencyConverter();
+
+    // Display Approximate Price in Checkout Blocks pages
+    if (typeof YayCurrency_Callback.Helper.approximatePriceCheckoutBlocks === 'function' && 'yes' === yayCurrency.show_approximate_price) {
+      YayCurrency_Callback.Helper.approximatePriceCheckoutBlocks(currencyID);
+    }
+
   });
 })(jQuery);

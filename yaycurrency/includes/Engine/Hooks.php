@@ -35,11 +35,6 @@ class Hooks {
 		add_filter( 'yay_currency_get_cart_subtotal', array( $this, 'get_cart_subtotal' ), 10, 2 );
 		add_filter( 'yay_currency_get_cart_subtotal_default', array( $this, 'calculate_cart_subtotal_default' ), 10, 1 );
 		add_filter( 'yay_currency_get_discount_total', array( $this, 'calculate_discount_total' ), 10, 2 );
-		add_filter( 'yay_currency_get_shipping_total', array( $this, 'calculate_shipping_total' ), 10, 3 );
-
-		add_filter( 'yay_currency_get_fee_total', array( $this, 'calculate_fee_total' ), 10, 2 );
-		add_filter( 'yay_currency_get_total_tax', array( $this, 'calculate_total_tax' ), 10, 2 );
-		add_filter( 'yay_currency_get_cart_total', array( $this, 'calculate_cart_total' ), 10, 3 );
 
 		// ADD FILTER GET PRICE WITH CONDITIONS
 		add_filter( 'yay_currency_get_price_with_conditions', array( $this, 'get_price_with_conditions' ), 10, 3 );
@@ -68,8 +63,13 @@ class Hooks {
 		add_action( 'yay_currency_handle_manual_set_order_data', array( $this, 'handle_manual_set_order_data' ), 10, 3 );
 
 		// CALCULATE PRICE
+		add_filter( 'yay_currency_formatted_amount', array( $this, 'formatted_amount_callback' ), 10, 2 );
 		add_filter( 'yay_currency_convert_price', array( $this, 'convert_price_callback' ), 10, 2 );
 		add_filter( 'yay_currency_revert_price', array( $this, 'revert_price_callback' ), 10, 2 );
+
+		// EMAIL
+		add_action( 'woocommerce_email_order_details', array( $this, 'set_email_order_id' ), 9, 4 );
+
 	}
 
 	public function get_yay_currency_rate( $rate = 1 ) {
@@ -159,28 +159,6 @@ class Hooks {
 		$cart_subtotal  = $apply_currency ? apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency ) : apply_filters( 'yay_currency_get_cart_subtotal_default', 0 );
 		$discount_total = SupportHelper::get_total_coupons( $cart_subtotal, $apply_currency );
 		return $discount_total;
-	}
-
-	public function calculate_shipping_total( $shipping_total, $apply_currency, $is_fallback = false ) {
-		$calculate_default = $apply_currency ? false : true;
-		$shipping_total    = SupportHelper::get_shipping_total_selected( $apply_currency, $calculate_default, false, $is_fallback );
-		return $shipping_total;
-	}
-
-	public function calculate_fee_total( $fee_total, $apply_currency ) {
-		$calculate_default = $apply_currency ? false : true;
-		$fee_total         = SupportHelper::get_total_fees( $apply_currency, false, $calculate_default );
-		return $fee_total;
-	}
-
-	public function calculate_total_tax( $total_tax, $apply_currency ) {
-		$total_tax = SupportHelper::get_total_tax( $apply_currency );
-		return $total_tax;
-	}
-
-	public function calculate_cart_total( $total, $apply_currency, $is_fallback ) {
-		$total = SupportHelper::get_cart_total( $apply_currency, $is_fallback );
-		return $total;
 	}
 
 	public function get_price_with_conditions( $price, $product, $apply_currency ) {
@@ -515,6 +493,29 @@ class Hooks {
 
 	}
 
+	public function formatted_amount_callback( $amount = 0, $converted_currency = array() ) {
+		$default_currency_apply_currency = YayCurrencyHelper::get_currency_by_currency_code( Helper::default_currency_code(), $converted_currency );
+		if ( ! $default_currency_apply_currency ) {
+			$number_decimals = get_option( 'woocommerce_price_num_decimals' );
+			$decimal_sep     = get_option( 'woocommerce_price_decimal_sep' );
+			$thousand_sep    = get_option( 'woocommerce_price_thousand_sep' );
+		} else {
+			$number_decimals = $default_currency_apply_currency['numberDecimal'];
+			$decimal_sep     = $default_currency_apply_currency['decimalSeparator'];
+			$thousand_sep    = $default_currency_apply_currency['thousandSeparator'];
+		}
+		$formatted_value = number_format( $amount, (int) $number_decimals, $decimal_sep, $thousand_sep );
+		// Step 1: Remove thousand separator
+		$value_without_thousand_sep = str_replace( $thousand_sep, '', $formatted_value );
+		// Step 2: Replace the decimal separator with a dot
+		$value_with_dot_decimal = str_replace( $decimal_sep, '.', $value_without_thousand_sep );
+		// Step 3: Convert to a float
+		if ( is_numeric( $value_with_dot_decimal ) ) {
+			return (float) $value_with_dot_decimal;
+		}
+		return $amount;
+	}
+
 	public function convert_price_callback( $price = 0, $apply_currency = array() ) {
 		$apply_currency = $apply_currency ? $apply_currency : YayCurrencyHelper::detect_current_currency();
 		$price          = YayCurrencyHelper::calculate_price_by_currency( $price, false, $apply_currency );
@@ -522,7 +523,44 @@ class Hooks {
 	}
 
 	public function revert_price_callback( $price = 0, $apply_currency = array() ) {
-		$price = YayCurrencyHelper::reverse_calculate_price_by_currency( $price, false, $apply_currency );
+		$price = YayCurrencyHelper::reverse_calculate_price_by_currency( $price, $apply_currency );
 		return $price;
+	}
+
+	// Email
+
+	public function set_email_order_id( $order, $sent_to_admin, $plain_text, $email ) {
+
+		$_REQUEST['yay_currency_email_order_id'] = $order->get_id();
+
+		add_filter( 'woocommerce_currency', array( $this, 'filter_email_currency_code' ), PHP_INT_MAX, 2 ); // only run in email
+		add_filter( 'woocommerce_currency_symbol', array( $this, 'filter_email_currency_symbol' ), PHP_INT_MAX, 2 ); // only run in email
+
+	}
+
+	protected function get_email_order_currency_code() {
+		// only run in Email
+		if ( doing_action( 'woocommerce_email' ) || doing_action( 'woocommerce_email_order_details' ) ) {
+			if ( isset( $_REQUEST['yay_currency_email_order_id'] ) ) {
+				$order_id = intval( sanitize_text_field( $_REQUEST['yay_currency_email_order_id'] ) );
+				if ( ! empty( $order_id ) && $order_id ) {
+					$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $order_id );
+					return $order_currency;
+				}
+			}
+		}
+		return false;
+	}
+
+	public function filter_email_currency_code( $currency_code ) {
+		$order_currency = self::get_email_order_currency_code();
+		$currency_code  = isset( $order_currency['currency'] ) ? wp_kses_post( html_entity_decode( $order_currency['currency'] ) ) : $currency_code;
+		return $currency_code;
+	}
+
+	public function filter_email_currency_symbol( $currency_symbol, $currency ) {
+		$order_currency  = self::get_email_order_currency_code();
+		$currency_symbol = isset( $order_currency['symbol'] ) ? wp_kses_post( html_entity_decode( $order_currency['symbol'] ) ) : $currency_symbol;
+		return $currency_symbol;
 	}
 }

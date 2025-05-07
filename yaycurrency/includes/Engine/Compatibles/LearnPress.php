@@ -2,13 +2,14 @@
 namespace Yay_Currency\Engine\Compatibles;
 
 use Yay_Currency\Utils\SingletonTrait;
-use Yay_Currency\Helpers\Helper;
+
 use Yay_Currency\Helpers\YayCurrencyHelper;
-use LearnPress\Models\CourseModel;
+use Yay_Currency\Helpers\Helper;
+use LP_Settings_Courses;
 
 defined( 'ABSPATH' ) || exit;
 
-// link plugin : https://thimpress.com/learnpress/
+// link plugin : https://wordpress.org/plugins/learnpress/
 
 class LearnPress {
 	use SingletonTrait;
@@ -17,28 +18,93 @@ class LearnPress {
 
 	public function __construct() {
 
-		if ( class_exists( '\LP_Admin_Assets' ) ) {
-			$this->apply_currency = YayCurrencyHelper::detect_current_currency();
-			add_filter( 'learn-press/course/price', array( $this, 'custom_course_price' ), 10, 2 );
-			add_filter( 'learn-press/course/regular-price', array( $this, 'custom_course_regular_price' ), 10, 2 );
-			add_filter( 'learn_press_currency_symbol', array( $this, 'learn_press_currency_symbol' ), 10, 2 );
-
-			// Archive
-			add_filter( 'learnPress/course/price', array( $this, 'archiveCoursePrice' ), 10, 2 );
-			add_filter( 'learnPress/course/regular-price', array( $this, 'archiveCourseRegularPrice' ), 10, 2 );
-
-			add_filter( 'learn-press/course/regular-price-html', array( $this, 'archive_course_regular_price_html' ), 10, 2 );
-			add_filter( 'learn_press_course_price_html', array( $this, 'archive_course_price_html' ), 10, 3 );
-
+		if ( ! class_exists( '\LP_Admin_Assets' ) ) {
+			return;
 		}
+
+		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
+
+		add_filter( 'learn-press/course/price', array( $this, 'custom_course_price' ), 10, 2 );
+		add_filter( 'learn-press/course/regular-price', array( $this, 'custom_course_regular_price' ), 10, 2 );
+		add_filter( 'learn_press_currency_symbol', array( $this, 'learn_press_currency_symbol' ), 10, 2 );
+
+		// Archive
+		add_filter( 'learnPress/course/price', array( $this, 'archive_course_price' ), 10, 2 );
+		add_filter( 'learnPress/course/regular-price', array( $this, 'archive_course_regular_price' ), 10, 2 );
+
+		add_filter( 'learn-press/course/regular-price-html', array( $this, 'archive_course_regular_price_html' ), 10, 2 );
+		add_filter( 'learn_press_course_price_html', array( $this, 'archive_course_price_html' ), 10, 3 );
+
+		// Cart Item Subtotal
+		add_filter( 'learn-press/cart/item-subtotal', array( $this, 'cart_course_item_subtotal' ), 10, 4 );
+
+		// LearnPress - WooCommerce Payment Methods Integration
+		if ( defined( 'LP_ADDON_WOO_PAYMENT_VER' ) ) {
+			add_filter( 'learn-press/woo-course/price', array( $this, 'get_woo_course_price_custom' ), 10, 2 );
+			add_filter( 'learn-press/woo-course/regular-price', array( $this, 'get_woo_course_price_custom' ), 10, 2 );
+			add_filter( 'learn-press/woo-course/sale-price', array( $this, 'get_woo_course_price_custom' ), 10, 2 );
+		}
+
+	}
+
+	protected function is_admin_dashboard() {
+		return is_admin() && ! wp_doing_ajax();
+	}
+
+	// Get Course price from original currency
+	protected function get_course_price( $course_id, $type = 'price' ) {
+		$prices = array(
+			'regular' => get_post_meta( $course_id, '_lp_regular_price', true ),
+			'sale'    => get_post_meta( $course_id, '_lp_sale_price', true ),
+		);
+
+		if ( 'regular' === $type || 'sale' === $type ) {
+			return ! empty( $prices[ $type ] ) && $prices[ $type ] > 0 ? $prices[ $type ] : 0;
+		}
+
+		// Return sale price if available, otherwise fallback to regular price
+		return ( ! empty( $prices['sale'] ) && $prices['sale'] > 0 ) ? $prices['sale'] : ( ! empty( $prices['regular'] ) && $prices['regular'] > 0 ? $prices['regular'] : 0 );
+	}
+
+	public function custom_course_price( $price, $course_id ) {
+
+		if ( self::is_admin_dashboard() || empty( $price ) || ! is_numeric( $price ) ) {
+			return $price;
+		}
+
+		$price = self::get_course_price( $course_id );
+		$price = apply_filters( 'yay_currency_convert_price', $price, $this->apply_currency );
+
+		return $price;
+	}
+
+	public function custom_course_regular_price( $regular_price, $course_id ) {
+
+		if ( self::is_admin_dashboard() || empty( $regular_price ) || ! is_numeric( $regular_price ) ) {
+			return $regular_price;
+		}
+
+		$regular_price = self::get_course_price( $course_id, 'regular' );
+		$regular_price = apply_filters( 'yay_currency_convert_price', $regular_price, $this->apply_currency );
+
+		return $regular_price;
+
 	}
 
 	public function learn_press_currency_symbol( $currency_symbol, $currency ) {
+
+		if ( self::is_admin_dashboard() ) {
+			return $currency_symbol;
+		}
+
 		if ( isset( $this->apply_currency['symbol'] ) && ! is_admin() ) {
 			$currency_symbol = $this->apply_currency['symbol'];
 		}
+
 		return $currency_symbol;
 	}
+
+	// Archive Course page
 
 	protected function archive_course_rest_route() {
 
@@ -55,75 +121,110 @@ class LearnPress {
 		return false;
 	}
 
-	public function custom_course_price( $price, $course_id ) {
-		if ( apply_filters( 'yay_currency_learn_press_default_course_price', false ) ) {
-			return $price;
-		}
-		$price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
-		return $price;
+	protected function is_archive_course() {
+		$archive_course_ajax = LP_Settings_Courses::is_ajax_load_courses() && isset( $_REQUEST['lp-load-ajax'] ) && 'load_content_via_ajax' === $_REQUEST['lp-load-ajax'];
+		return is_post_type_archive( 'lp_course' ) || $archive_course_ajax;
 	}
 
-	public function custom_course_regular_price( $price, $course_id ) {
+	public function archive_course_price( $price, $course_id ) {
 		if ( empty( $price ) || ! is_numeric( $price ) ) {
 			return $price;
 		}
-		$course = CourseModel::find( $course_id, true );
-		if ( $course && ! $course->get_sale_price() ) {
+
+		if ( self::is_admin_dashboard() ) {
 			return $price;
 		}
-
-		if ( apply_filters( 'yay_currency_learn_press_default_course_price', false ) ) {
-			return $price;
+		if ( self::is_archive_course() ) {
+			$price = apply_filters( 'yay_currency_convert_price', $price, $this->apply_currency );
 		}
-
-		$price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
 
 		return $price;
+
 	}
 
-	public function archiveCoursePrice( $price, $course_id ) {
-		if ( empty( $price ) || ! is_numeric( $price ) ) {
-			return $price;
-		}
-		$price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
-		return $price;
-	}
+	public function archive_course_regular_price( $regular_price, $course_id ) {
 
-	public function archiveCourseRegularPrice( $price, $course_id ) {
-		if ( empty( $price ) || ! is_numeric( $price ) ) {
-			return $price;
+		if ( empty( $regular_price ) || ! is_numeric( $regular_price ) ) {
+			return $regular_price;
 		}
-		$price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
-		return $price;
+
+		if ( self::is_admin_dashboard() ) {
+			return $regular_price;
+		}
+
+		if ( self::is_archive_course() ) {
+			$regular_price = apply_filters( 'yay_currency_convert_price', $regular_price, $this->apply_currency );
+		}
+
+		return $regular_price;
 	}
 
 	public function archive_course_regular_price_html( $price, $course ) {
-		if ( isset( $GLOBALS['wp']->query_vars ) && isset( $GLOBALS['wp']->query_vars['lp_course'] ) ) {
+
+		if ( self::is_admin_dashboard() ) {
 			return $price;
 		}
-		if ( self::archive_course_rest_route() ) {
-			$regular_price = $course->get_regular_price();
-			$regular_price = YayCurrencyHelper::calculate_price_by_currency( $regular_price, false, $this->apply_currency );
+
+		if ( self::archive_course_rest_route() || self::is_archive_course() || self::is_single_course_page() ) {
+			$course_id     = is_object( $course ) ? $course->get_id() : $course;
+			$regular_price = self::get_course_price( $course_id, 'regular' );
+			$regular_price = apply_filters( 'yay_currency_convert_price', $regular_price, $this->apply_currency );
 			$price         = YayCurrencyHelper::format_price( $regular_price );
 		}
+
 		return $price;
 	}
 
+	private function is_single_course_page() {
+		return isset( $GLOBALS['wp']->query_vars ) && isset( $GLOBALS['wp']->query_vars['lp_course'] );
+	}
+
 	public function archive_course_price_html( $price, $has_sale_price, $course_id ) {
-		if ( isset( $GLOBALS['wp']->query_vars ) && isset( $GLOBALS['wp']->query_vars['lp_course'] ) ) {
+
+		if ( self::is_admin_dashboard() ) {
 			return $price;
 		}
-		if ( self::archive_course_rest_route() ) {
-			$course = CourseModel::find( $course_id, true );
+
+		if ( self::archive_course_rest_route() || self::is_archive_course() || self::is_single_course_page() ) {
+			$course = learn_press_get_course( $course_id );
 			if ( $course ) {
 				$price_html = '';
 				if ( $has_sale_price ) {
 					$price_html .= sprintf( '<span class="origin-price">%s</span>', self::archive_course_regular_price_html( $price, $course ) );
 				}
-				$regular_price = $course->get_price();
-				$price         = $price_html . YayCurrencyHelper::format_price( $regular_price );
+
+				$final_price = $course->get_price();
+
+				$format_price = YayCurrencyHelper::format_price( $final_price );
+
+				if ( self::is_single_course_page() ) {
+					$format_price = '<span class="price">' . $format_price . '</span>';
+				}
+
+				$price = $price_html . $format_price;
+
 			}
 		}
+
+		return $price;
+	}
+
+	public function cart_course_item_subtotal( $course_subtotal, $course, $quantity, $cart ) {
+		if ( ! function_exists( 'learn_press_format_price' ) ) {
+			return $course_subtotal;
+		}
+		$course_price    = apply_filters( 'yay_currency_convert_price', $course->get_price(), $this->apply_currency );
+		$course_subtotal = $course_price * $quantity;
+		$course_subtotal = learn_press_format_price( $course_subtotal, true );
+		return $course_subtotal;
+	}
+	// LearnPress - WooCommerce Payment Methods Integration
+
+	public function get_woo_course_price_custom( $price, $course ) {
+		if ( apply_filters( 'yay_currency_learn_press_default_course_price', false ) || YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) ) {
+			return $price;
+		}
+		$price = apply_filters( 'yay_currency_convert_price', $price, $this->apply_currency );
 		return $price;
 	}
 }

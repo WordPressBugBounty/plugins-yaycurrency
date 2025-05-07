@@ -27,6 +27,7 @@ class JetSmartFilters {
 		add_filter( 'wcml_raw_price_amount', array( $this, 'raw_price_amount' ), 10, 1 );
 		add_filter( 'jet-smart-filters/filter-instance/args', array( $this, 'custom_query_args' ), 10, 2 );
 		add_filter( 'jet-smart-filters/query/final-query', array( $this, 'custom_final_query' ) );
+		add_filter( 'jet-smart-filters/query/request', array( $this, 'reverse_query_request' ), 10, 2 );
 	}
 
 	public function yay_currency_detect_action_args( $action_args ) {
@@ -48,6 +49,8 @@ class JetSmartFilters {
 			$converted_args_max_price = YayCurrencyHelper::calculate_price_by_currency( $args['max'], false, $this->apply_currency );
 			$args['min']              = (float) number_format( $converted_args_min_price, (int) $this->apply_currency['numberDecimal'], null, '' );
 			$args['max']              = (float) number_format( $converted_args_max_price, (int) $this->apply_currency['numberDecimal'], null, '' );
+			$args['prefix']           = str_replace( '[yaycurrency_current_symbol]', $this->apply_currency['symbol'], $args['prefix'] );
+			$args['suffix']           = str_replace( '[yaycurrency_current_symbol]', $this->apply_currency['symbol'], $args['suffix'] );
 		}
 		return $args;
 	}
@@ -79,5 +82,15 @@ class JetSmartFilters {
 
 		return $args;
 
+	}
+	public function reverse_query_request( $request, $query ) {
+		if ( isset( $request['query'] ) && isset( $request['query']['_meta_query__price|range'] ) ) {
+			$old            = $request['query']['_meta_query__price|range'];
+			$ex             = explode( '_', $old );
+			$apply_currency = YayCurrencyHelper::detect_current_currency();
+			$request['query']['_meta_query__price|range'] = YayCurrencyHelper::reverse_calculate_price_by_currency( $ex[0], $apply_currency ) . '_' . YayCurrencyHelper::reverse_calculate_price_by_currency( $ex[1], $apply_currency );
+
+		}
+		return $request;
 	}
 }

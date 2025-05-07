@@ -88,7 +88,7 @@ class YITHWooCommerceSubscription {
 
 			$sbs_total_format = str_replace( '{{sub-time}}', $max_length_text, $sbs_total_format );
 			if ( YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) ) {
-				$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+				$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 				if ( $converted_approximately ) {
 					$total_subscription_price_approximately = YayCurrencyHelper::calculate_price_by_currency( $total_subscription_price, false, $this->apply_currency );
 					$total_subscription_price_approximately = YayCurrencyHelper::format_price( $total_subscription_price_approximately * $quantity );
@@ -147,7 +147,7 @@ class YITHWooCommerceSubscription {
 			$recurring_tax = ' <small class="tax_label">' . WC()->countries->ex_tax_or_vat() . '</small>';
 		}
 		if ( is_checkout() ) {
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			$currencies_data         = YayCurrencyHelper::get_current_and_fallback_currency( $this->apply_currency );
 			if ( ! $converted_approximately || YayCurrencyHelper::is_current_fallback_currency( $currencies_data ) ) {
 				$recurring_total      = YayCurrencyHelper::calculate_price_by_currency( $recurring_price_display, false, $this->apply_currency );
@@ -170,7 +170,7 @@ class YITHWooCommerceSubscription {
 
 	public function custom_ywsbs_change_subtotal_product_price( $price_html, $product, $quantity, $cart_item ) {
 		if ( is_checkout() ) {
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			$currencies_data         = YayCurrencyHelper::get_current_and_fallback_currency( $this->apply_currency );
 			if ( ! $converted_approximately || YayCurrencyHelper::is_current_fallback_currency( $currencies_data ) ) {
 				return $price_html;

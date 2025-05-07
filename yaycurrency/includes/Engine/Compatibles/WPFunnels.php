@@ -34,6 +34,7 @@ class WPFunnels {
 
 		add_filter( 'woocommerce_cart_subtotal', array( $this, 'woocommerce_cart_subtotal' ), 10, 3 );
 
+		add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 10, 3 );
 	}
 
 	public function product_addons_set_cart_contents( $cart_contents, $key, $cart_item, $apply_currency ) {
@@ -112,5 +113,36 @@ class WPFunnels {
 			$cart_subtotal = YayCurrencyHelper::calculate_custom_price_by_currency_html( $this->apply_currency, $subtotal );
 		}
 		return $cart_subtotal;
+	}
+
+	public function is_original_product_price( $flag, $price, $product ) {
+		if ( is_checkout() && ! is_a( $product, 'WC_Product_Bundle' ) ) {
+			global $post;
+			if ( isset( $_REQUEST['wc-ajax'] ) && ( 'apply_coupon' === $_REQUEST['wc-ajax'] || 'wc_stripe_get_cart_details' === $_REQUEST['wc-ajax'] ) ) {
+				return $flag;
+			}
+
+			if ( is_admin() || isset( $_GET['removed_item'] ) || ! $post ) {
+				return $flag;
+			}
+
+			if ( ! \WPFunnels\Wpfnl_functions::is_wc_active() ) {
+				return $flag;
+			}
+
+			$checkout_id = '';
+			if ( wp_doing_ajax() ) {
+				if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'woocommerce-process_checkout' ) ) {
+					$checkout_id = \WPFunnels\Wpfnl_functions::get_checkout_id_from_post( $_POST );
+				}
+			}
+
+			$checkout_id = ! $checkout_id ? $post->ID : $checkout_id;
+			$funnel_id   = get_post_meta( $checkout_id, '_funnel_id', true );
+			if ( $funnel_id && doing_filter( 'woocommerce_product_get_sale_price' ) ) {
+				$flag = true;
+			}
+		}
+		return $flag;
 	}
 }

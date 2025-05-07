@@ -4,7 +4,6 @@ namespace Yay_Currency\Engine\Compatibles;
 
 use Yay_Currency\Helpers\Helper;
 use Yay_Currency\Helpers\YayCurrencyHelper;
-use Yay_Currency\Helpers\SupportHelper;
 
 use Yay_Currency\Utils\SingletonTrait;
 
@@ -15,18 +14,16 @@ class ThirdPartyPlugins {
 
 	public function __construct() {
 
-		// ======= Custom Email Symbol ============
-
-		if ( SupportHelper::should_change_email_symbol() ) {
-			add_action( 'woocommerce_email_order_details', array( $this, 'set_email_order_id' ), 9, 4 );
-			add_filter( 'yay_currency_woocommerce_currency_symbol', array( $this, 'get_email_currency_symbol' ), 999999, 3 );
-		}
-
 		// ======= Cache Plugins ============
 
 		// WP Grid Builder Caching. Link plugin: https://www.wpgridbuilder.com
 		if ( class_exists( 'WP_Grid_Builder_Caching\Includes\Plugin' ) ) {
 			add_filter( 'wp_grid_builder_caching/bypass', array( $this, 'bypass_grid_builder_caching' ), 10, 2 );
+		}
+
+		// Revolut Gateway for WooCommerce. Link plugin: https://wordpress.org/plugins/revolut-gateway-for-woocommerce/
+		if ( defined( 'WC_GATEWAY_REVOLUT_VERSION' ) ) {
+			add_filter( 'yay_currency_woocommerce_currency', array( $this, 'yay_revolut_gateway_convert_currency' ), 999, 2 );
 		}
 
 		// ======= Payment Plugins ============
@@ -85,14 +82,6 @@ class ThirdPartyPlugins {
 			add_filter( 'yay_currency_get_product_price_default_by_cart_item', array( $this, 'yay_pricing_get_product_price_default_by_cart_item' ), 10, 2 );
 		}
 
-		// Tiered Pricing Table For WooCommerce. Link plugin: https://woocommerce.com/products/tiered-pricing-table-for-woocommerce/
-		if ( class_exists( 'TierPricingTable\TierPricingTablePlugin' ) ) {
-			add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 10, 3 );
-			add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'tier_pricing_table_product_price_3rd_with_condition' ), 10, 2 );
-			add_filter( 'tier_pricing_table/price/product_price_rules', array( $this, 'custom_tier_pricing_product_price_rules' ), 10, 4 );
-			add_filter( 'tiered_pricing_table/price/product_price_rules', array( $this, 'custom_tier_pricing_product_price_rules' ), 10, 4 );
-		}
-
 		// WC Price History. Link plugin: https://github.com/kkarpieszuk/wc-price-history
 		if ( defined( 'WC_PRICE_HISTORY_VERSION' ) ) {
 			add_filter( 'wc_price_history_lowest_price_html_raw_value_taxed', array( $this, 'convert_wc_price_history_lowest_price' ), 10, 2 );
@@ -105,25 +94,6 @@ class ThirdPartyPlugins {
 		}
 	}
 
-	// ======= Custom Email Symbol ============
-
-	public function set_email_order_id( $order, $sent_to_admin, $plain_text, $email ) {
-		$order_id                                = $order->get_id();
-		$_REQUEST['yay_currency_email_order_id'] = $order_id;
-	}
-
-	public function get_email_currency_symbol( $currency_symbol, $currency, $apply_currency ) {
-		if ( doing_action( 'woocommerce_email_order_details' ) && isset( $_REQUEST['yay_currency_email_order_id'] ) ) {
-			$order_id = sanitize_text_field( $_REQUEST['yay_currency_email_order_id'] );
-			$order_id = intval( $order_id );
-			if ( $order_id ) {
-				$order_currency  = YayCurrencyHelper::get_order_currency_by_order_id( $order_id );
-				$currency_symbol = $order_currency ? wp_kses_post( html_entity_decode( $order_currency['symbol'] ) ) : $currency_symbol;
-			}
-		}
-		return $currency_symbol;
-	}
-
 	// ======= Cache Plugins ============
 
 	// WP Grid Builder Caching.
@@ -132,6 +102,18 @@ class ThirdPartyPlugins {
 	}
 
 	// ======= Payment Plugins ============
+
+	// Revolut Gateway for WooCommerce.
+	public function yay_revolut_gateway_convert_currency( $currency, $is_dis_checkout_diff_currency ) {
+		if ( $is_dis_checkout_diff_currency ) {
+			$revolut_action_args = array( 'wc_revolut_create_order', 'wc_revolut_process_payment_result' );
+			if ( wp_doing_ajax() && isset( $_REQUEST['wc-ajax'] ) && in_array( $_REQUEST['wc-ajax'], $revolut_action_args, true ) ) {
+				$currency = Helper::default_currency_code();
+			}
+		}
+
+		return $currency;
+	}
 
 	// AG WooCommerce Tyl By NatWest Payment Gateway.
 	public function yay_agtyl_convert_to_default_currency( $currency, $is_dis_checkout_diff_currency ) {
@@ -213,12 +195,17 @@ class ThirdPartyPlugins {
 	//Shipmondo.
 	public function shipmondo_shipping_instance_option( $value, $key, $shipping ) {
 
-		if ( is_admin() || ! in_array( $key, array( 'free_shipping_total', 'shipping_price' ) ) ) {
+		if ( is_admin() || ! in_array( $key, array( 'free_shipping_total' ) ) ) {
 			return $value;
 		}
 
 		$apply_currency = YayCurrencyHelper::detect_current_currency();
-		$value          = YayCurrencyHelper::calculate_price_by_currency( $value, false, $apply_currency );
+
+		if ( YayCurrencyHelper::disable_fallback_option_in_checkout_page( $apply_currency ) ) {
+			return $value;
+		}
+
+		$value = YayCurrencyHelper::calculate_price_by_currency( $value, false, $apply_currency );
 		return $value;
 
 	}
@@ -254,37 +241,7 @@ class ThirdPartyPlugins {
 		return $price;
 	}
 
-	// Tiered Pricing Table For WooCommerce.
-	public function is_original_product_price( $flag, $price, $product ) {
-		$rest_route = Helper::get_rest_route_via_rest_api();
-		if ( ( doing_action( 'woocommerce_before_calculate_totals' ) && ! $rest_route ) || ( ! doing_action( 'woocommerce_before_calculate_totals' ) && $rest_route ) ) {
-			$flag = true;
-		}
-		return $flag;
-	}
-
-	public function tier_pricing_table_product_price_3rd_with_condition( $price, $product ) {
-		if ( isset( $product->get_changes()['price'] ) ) {
-			$price = $product->get_changes()['price'];
-		}
-		return $price;
-	}
-
-	public function custom_tier_pricing_product_price_rules( $rules, $product_id, $type, $parent_id ) {
-		if ( 'fixed' === $type ) {
-			$converted_rules = array_map(
-				function ( $rule ) {
-					$apply_currency = YayCurrencyHelper::detect_current_currency();
-					$rule           = YayCurrencyHelper::calculate_price_by_currency( $rule, false, $apply_currency );
-					return $rule;
-				},
-				$rules
-			);
-			return $converted_rules;
-		}
-		return $rules;
-	}
-
+	// WC Price History.
 	public function convert_wc_price_history_lowest_price( $lowest_price, $product ) {
 		if ( is_admin() ) {
 			return $lowest_price;

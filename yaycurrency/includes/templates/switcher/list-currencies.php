@@ -17,9 +17,9 @@ foreach ( $selected_currencies as $currency ) {
 	$get_symbol_by_currency = YayCurrencyHelper::get_symbol_by_currency( $currency->post_title, $converted_currency );
 	$currency_symbol        = $is_show_currency_symbol ? ( $is_show_currency_name ? ' (' . $get_symbol_by_currency . ')' : $get_symbol_by_currency . ' ' ) : null;
 	$hyphen                 = ( $is_show_currency_name && $is_show_currency_code ) ? ' - ' : null;
-	$currency_code          = $is_show_currency_code ? apply_filters( 'yay_currency_switcher_change_currency_code', $currency->post_title, $currency ) : null;
+	$currency_code          = $is_show_currency_code ? apply_filters( 'yay_currency_switcher_change_currency_code', $currency->post_title ) : null;
 	?>
-	<li class="yay-currency-custom-option-row <?php echo $currency->ID === $selected_currency_id ? 'selected' : ''; ?>" data-currency-id="<?php echo esc_attr( $currency->ID ); ?>">
+	<li class="yay-currency-id-<?php echo esc_attr( $currency->ID ); ?> yay-currency-custom-option-row <?php echo $currency->ID === $selected_currency_id ? 'selected' : ''; ?>" data-currency-id="<?php echo esc_attr( $currency->ID ); ?>">
 		<?php
 		if ( $html_flag ) {
 			echo wp_kses_post( $html_flag );

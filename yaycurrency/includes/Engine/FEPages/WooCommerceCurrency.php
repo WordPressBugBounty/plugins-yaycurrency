@@ -120,6 +120,8 @@ class WooCommerceCurrency {
 			'converted_currency'      => $this->converted_currency,
 			'cart_page'               => function_exists( 'is_cart' ) ? is_cart() : '',
 			'default_currency_code'   => $this->default_currency,
+			'checkout_diff_currency'  => get_option( 'yay_currency_checkout_different_currency', 0 ),
+			'show_approximate_price'  => SupportHelper::display_approximately_converted_price( $this->apply_currency ) ? 'yes' : 'no',
 			'hide_dropdown_switcher'  => YayCurrencyHelper::detect_allow_hide_dropdown_currencies(),
 			'cookie_name'             => YayCurrencyHelper::get_cookie_name(),
 			'cookie_switcher_name'    => YayCurrencyHelper::get_cookie_name( 'switcher' ),
@@ -297,7 +299,8 @@ class WooCommerceCurrency {
 
 			$product_price             = $product->get_price();
 			$original_product_subtotal = YayCurrencyHelper::calculate_price_by_currency_html( $this->currencies_data['fallback_currency'], $product_price, $quantity );
-			$converted_approximately   = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately   = SupportHelper::display_approximately_converted_price( $this->apply_currency );
+
 			if ( ! $converted_approximately ) {
 				return $original_product_subtotal;
 			}
@@ -324,7 +327,7 @@ class WooCommerceCurrency {
 			}
 
 			//  Display approximate price only on the checkout page
-			if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			if ( SupportHelper::display_approximate_price_checkout_only() ) {
 				return $converted_product_subtotal;
 			}
 
@@ -344,7 +347,7 @@ class WooCommerceCurrency {
 
 			$subtotal_price          = apply_filters( 'yay_currency_checkout_get_subtotal_price', (float) WC()->cart->get_displayed_subtotal(), $this->apply_currency );
 			$original_subtotal       = YayCurrencyHelper::calculate_price_by_currency_html( $this->currencies_data['fallback_currency'], $subtotal_price );
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				return $original_subtotal;
 			}
@@ -356,7 +359,7 @@ class WooCommerceCurrency {
 			}
 
 			//  Display approximate price only on the checkout page
-			if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			if ( SupportHelper::display_approximate_price_checkout_only() ) {
 				return $converted_subtotal;
 			}
 
@@ -388,7 +391,20 @@ class WooCommerceCurrency {
 
 			$shipping_fee = (float) $method->cost;
 
-			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
+			// Recalculate Shipping Fee Including Tax
+			if ( 'incl' === get_option( 'woocommerce_tax_display_cart' ) && count( $method->get_taxes() ) > 0 ) {
+				$calculate_tax = 0;
+				foreach ( $method->get_taxes() as $tax ) {
+					$tax_rate       = \WC_Tax::calc_shipping_tax( $shipping_fee, \WC_Tax::get_shipping_tax_rates() );
+					$tax_currency   = YayCurrencyHelper::calculate_price_by_currency( $tax, true, $this->apply_currency );
+					$tax_rate       = is_array( $tax_rate ) ? array_sum( $tax_rate ) : $tax_currency;
+					$calculate_tax += $tax_rate;
+
+				}
+				$shipping_fee = $shipping_fee + $calculate_tax;
+			}
+
+			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) || ! $shipping_fee ) {
 				return $label;
 			}
 
@@ -399,7 +415,7 @@ class WooCommerceCurrency {
 
 	public function custom_cart_totals_fee_html( $cart_totals_fee_html, $fee ) {
 		if ( is_checkout() ) {
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 
 			if ( ! $converted_approximately || YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $cart_totals_fee_html;
@@ -410,7 +426,7 @@ class WooCommerceCurrency {
 			$convert_fee_amount      = YayCurrencyHelper::calculate_price_by_currency( $fee_amount, true, $this->currencies_data['current_currency'] );
 			$convert_fee_amount_html = YayCurrencyHelper::format_price( $convert_fee_amount );
 			//  Display approximate price only on the checkout page
-			if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			if ( SupportHelper::display_approximate_price_checkout_only() ) {
 				return $convert_fee_amount_html;
 			}
 			$cart_totals_fee_html = $fee_amount_html . YayCurrencyHelper::converted_approximately_html( $convert_fee_amount_html );
@@ -424,7 +440,7 @@ class WooCommerceCurrency {
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $tax_display;
 			}
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			foreach ( $tax_display as $tax_info ) {
 				$tax_info->formatted_amount = YayCurrencyHelper::calculate_price_by_currency_html( $this->currencies_data['fallback_currency'], $tax_info->amount );
 
@@ -435,7 +451,7 @@ class WooCommerceCurrency {
 						$formatted_converted_tax_amount = apply_filters( 'yay_currency_checkout_converted_tax_amount', $formatted_converted_tax_amount, $tax_info, $this->apply_currency );
 					}
 					//  Display approximate price only on the checkout page
-					if ( SupportHelper::display_approximate_price_on_checkout() ) {
+					if ( SupportHelper::display_approximate_price_checkout_only() ) {
 						$tax_info->formatted_amount = $formatted_converted_tax_amount;
 					} else {
 						$formatted_converted_tax_amount_html = YayCurrencyHelper::converted_approximately_html( $formatted_converted_tax_amount );
@@ -452,7 +468,7 @@ class WooCommerceCurrency {
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $taxes_total_html;
 			}
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			$taxes_total             = WC()->cart->get_taxes_total();
 			$taxes_total_html        = YayCurrencyHelper::calculate_price_by_currency_html( $this->currencies_data['fallback_currency'], $taxes_total );
 			$taxes_total_html        = apply_filters( 'yay_currency_get_taxes_total_html', $taxes_total_html, $taxes_total, $this->currencies_data['fallback_currency'] );
@@ -460,7 +476,7 @@ class WooCommerceCurrency {
 				return $taxes_total_html;
 			}
 			$converted_taxes_total_html = YayCurrencyHelper::calculate_price_by_currency_html( $this->apply_currency, $taxes_total );
-			if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			if ( SupportHelper::display_approximate_price_checkout_only() ) {
 				return $converted_taxes_total_html;
 			}
 			$converted_taxes_total_html = YayCurrencyHelper::converted_approximately_html( $converted_taxes_total_html, true );
@@ -478,7 +494,7 @@ class WooCommerceCurrency {
 
 			$total_price             = apply_filters( 'yay_currency_checkout_get_total_price', (float) WC()->cart->total );
 			$original_total          = YayCurrencyHelper::calculate_price_by_currency_html( $this->currencies_data['fallback_currency'], $total_price );
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				return $original_total;
 			}
@@ -488,7 +504,7 @@ class WooCommerceCurrency {
 				$converted_total = apply_filters( 'yay_currency_checkout_converted_cart_total', $converted_total, $total_price, $this->apply_currency );
 			}
 			//  Display approximate price only on the checkout page
-			if ( SupportHelper::display_approximate_price_on_checkout() ) {
+			if ( SupportHelper::display_approximate_price_checkout_only() ) {
 				return $converted_total;
 			}
 			$converted_total_html = YayCurrencyHelper::converted_approximately_html( $converted_total );
@@ -582,9 +598,7 @@ class WooCommerceCurrency {
 
 		if ( count( array_filter( $methods ) ) ) {
 			$shipping_methods_args = array( 'alids', 'betrs_shipping', 'printful_shipping', 'easyship', 'printful_shipping_STANDARD', 'BookVAULT Shipping' );
-			if ( ! function_exists( 'b2bking' ) ) {
-				array_push( $shipping_methods_args, 'shipmondo' );
-			}
+			$shipping_methods_args = apply_filters( 'yay_currency_detect_shipping_methods_ignore', $shipping_methods_args );
 			foreach ( $methods as $key => $method ) {
 				$method_id = $method->method_id;
 				if ( in_array( $method_id, $shipping_methods_args, true ) ) {
@@ -622,7 +636,7 @@ class WooCommerceCurrency {
 						);
 						if ( is_numeric( $rate['cost'] ) && ! strpos( $cost, 'fee' ) ) {
 							if ( ! YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) && ! $this->is_original_default_currency() ) {
-								$rate['cost'] = YayCurrencyHelper::calculate_price_by_currency( $rate['cost'], true, $this->apply_currency );
+								$rate['cost'] = YayCurrencyHelper::calculate_price_by_currency( $rate['cost'], false, $this->apply_currency );
 							}
 						}
 					}
@@ -661,7 +675,7 @@ class WooCommerceCurrency {
 
 							if ( is_numeric( $class_cost ) && ! strpos( $class_cost_string, 'fee' ) ) {
 								if ( ! YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) && ! $this->is_original_default_currency() ) {
-									$class_cost = YayCurrencyHelper::calculate_price_by_currency( $class_cost, true, $this->apply_currency );
+									$class_cost = YayCurrencyHelper::calculate_price_by_currency( $class_cost, false, $this->apply_currency );
 								}
 							}
 
@@ -678,13 +692,15 @@ class WooCommerceCurrency {
 					}
 
 					if ( $has_fee_costs ) {
+						$rate['cost'] = apply_filters( 'yay_currency_get_shipping_cost', $rate['cost'], $method, $this->apply_currency );
 						$method->set_cost( $rate['cost'] );
 					} else {
 						if ( YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) || $this->is_original_default_currency() ) {
-							$rate['cost'] = apply_filters( 'yay_currency_get_original_shipping_cost', $cost, $this->apply_currency );
+							$shipping_cost = apply_filters( 'yay_currency_get_original_shipping_cost', $cost, $this->apply_currency );
 						} else {
-							$rate['cost'] = YayCurrencyHelper::calculate_price_by_currency( $cost, true, $this->apply_currency );
+							$shipping_cost = YayCurrencyHelper::calculate_price_by_currency( $cost, false, $this->apply_currency );
 						}
+						$rate['cost'] = apply_filters( 'yay_currency_get_shipping_cost', $shipping_cost, $method, $this->apply_currency );
 						$method->set_cost( $rate['cost'] );
 					}
 				} else {
@@ -693,7 +709,7 @@ class WooCommerceCurrency {
 						if ( YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) || $this->is_original_default_currency() ) {
 							return $methods;
 						}
-						$method->cost = YayCurrencyHelper::calculate_price_by_currency( $method->cost, true, $this->apply_currency );
+						$method->cost = YayCurrencyHelper::calculate_price_by_currency( $method->cost, false, $this->apply_currency );
 						return $methods;
 					}
 
@@ -702,7 +718,10 @@ class WooCommerceCurrency {
 					}
 					$data = get_option( 'woocommerce_' . $method->method_id . '_' . $method->instance_id . '_settings' );
 					$data = apply_filters( 'yay_currency_get_data_info_from_shipping_method', $data, $method->method_id, $package['contents_cost'], $this->apply_currency );
-					$method->set_cost( isset( $data['cost'] ) ? YayCurrencyHelper::calculate_price_by_currency( $data['cost'], true, $this->apply_currency ) : YayCurrencyHelper::calculate_price_by_currency( $method->get_cost(), true, $this->apply_currency ) );
+
+					$shipping_cost = isset( $data['cost'] ) ? YayCurrencyHelper::calculate_price_by_currency( $data['cost'], false, $this->apply_currency ) : YayCurrencyHelper::calculate_price_by_currency( $method->get_cost(), false, $this->apply_currency );
+					$shipping_cost = apply_filters( 'yay_currency_get_shipping_cost', $shipping_cost, $method, $this->apply_currency );
+					$method->set_cost( $shipping_cost );
 				}
 
 				// Set tax for shipping method
@@ -713,11 +732,17 @@ class WooCommerceCurrency {
 					}
 					$tax_new = array();
 					foreach ( $method->get_taxes() as $key => $tax ) {
-						$tax_currency = YayCurrencyHelper::calculate_price_by_currency( $tax, true, $apply_currency );
+						$tax_currency   = YayCurrencyHelper::calculate_price_by_currency( $tax, true, $apply_currency );
+						$shipping_rates = \WC_Tax::get_shipping_tax_rates();
 						if ( 'flat_rate' === $method->method_id && isset( $cost ) && ! is_numeric( $cost ) ) {
-							$tax_calculate   = \WC_Tax::calc_shipping_tax( $rate['cost'], \WC_Tax::get_shipping_tax_rates() );
+							$tax_calculate   = \WC_Tax::calc_shipping_tax( $rate['cost'], $shipping_rates );
 							$tax_new[ $key ] = is_array( $tax_calculate ) ? array_sum( $tax_calculate ) : $tax_currency;
 						} else {
+							if ( $shipping_rates && isset( $shipping_rates[ $key ] ) && isset( $apply_currency['roundingType'] ) && 'disabled' !== $apply_currency['roundingType'] ) {
+								$shipping_rate = isset( $shipping_rates[ $key ]['rate'] ) ? $shipping_rates[ $key ]['rate'] : 0;
+								$rate_percent  = floatval( $shipping_rate / 100 );
+								$tax_currency  = $method->cost * $rate_percent;
+							}
 							$tax_new[ $key ] = $tax_currency;
 						}
 					}
@@ -948,6 +973,11 @@ class WooCommerceCurrency {
 		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
 		if ( ! $apply_currency || YayCurrencyHelper::disable_fallback_option_in_checkout_page( $apply_currency ) ) {
 			$currency = apply_filters( 'yay_currency_woocommerce_currency', $currency, $this->is_dis_checkout_diff_currency );
+			return $currency;
+		}
+
+		$default_currency_symbol = SupportHelper::detect_keep_old_currency_symbol( false, $this->is_dis_checkout_diff_currency, $apply_currency );
+		if ( $default_currency_symbol ) {
 			return $currency;
 		}
 

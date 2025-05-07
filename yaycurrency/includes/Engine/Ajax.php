@@ -28,6 +28,38 @@ class Ajax {
 		add_action( 'wp_ajax_nopriv_yayCurrency_get_cart_subtotal_default_blocks', array( $this, 'ajax_handle_get_cart_subtotal_blocks' ) );
 	}
 
+	private function check_currency_code_exists( $currencies, $currency_code ) {
+		$currency_codes = array_column( $currencies, 'post_title' );
+		return in_array( $currency_code, $currency_codes, true );
+	}
+
+	private function get_default_currency( $woo_current_settings ) {
+		$default_currency = array(
+			'currency'          => $woo_current_settings['currentCurrency'],
+			'currencySymbol'    => html_entity_decode( get_woocommerce_currency_symbol( $woo_current_settings['currentCurrency'] ) ),
+			'currencyPosition'  => $woo_current_settings['currencyPosition'],
+			'thousandSeparator' => $woo_current_settings['thousandSeparator'],
+			'decimalSeparator'  => $woo_current_settings['decimalSeparator'],
+			'numberDecimal'     => $woo_current_settings['numberDecimals'],
+			'rate'              => array(
+				'type'  => 'auto',
+				'value' => '1',
+			),
+			'fee'               => array(
+				'value' => '0',
+				'type'  => 'fixed',
+			),
+			'status'            => '1',
+			'paymentMethods'    => array( 'all' ),
+			'countries'         => array( 'default' ),
+			'default'           => true,
+			'isLoading'         => false,
+			'roundingType'      => 'disabled',
+			'roundingValue'     => 1,
+			'subtractAmount'    => 0,
+		);
+		return $default_currency;
+	}
 
 	public function get_currency_manage_tab_data( $woo_current_settings ) {
 		$post_type_args = array(
@@ -39,6 +71,8 @@ class Ajax {
 		);
 
 		$currencies = get_posts( $post_type_args );
+
+		$default_currency = self::get_default_currency( $woo_current_settings );
 
 		if ( $currencies ) {
 			foreach ( $currencies as $currency ) {
@@ -74,31 +108,11 @@ class Ajax {
 				);
 				array_push( $this->converted_currencies, $converted_currency );
 			}
+			// Add default currency if it doesn't exist in the list
+			if ( ! self::check_currency_code_exists( $currencies, Helper::default_currency_code() ) ) {
+				array_push( $this->converted_currencies, $default_currency );
+			}
 		} else {
-			$default_currency = array(
-				'currency'          => $woo_current_settings['currentCurrency'],
-				'currencySymbol'    => html_entity_decode( get_woocommerce_currency_symbol( $woo_current_settings['currentCurrency'] ) ),
-				'currencyPosition'  => $woo_current_settings['currencyPosition'],
-				'thousandSeparator' => $woo_current_settings['thousandSeparator'],
-				'decimalSeparator'  => $woo_current_settings['decimalSeparator'],
-				'numberDecimal'     => $woo_current_settings['numberDecimals'],
-				'rate'              => array(
-					'type'  => 'auto',
-					'value' => '1',
-				),
-				'fee'               => array(
-					'value' => '0',
-					'type'  => 'fixed',
-				),
-				'status'            => '1',
-				'paymentMethods'    => array( 'all' ),
-				'countries'         => array( 'default' ),
-				'default'           => true,
-				'isLoading'         => false,
-				'roundingType'      => 'disabled',
-				'roundingValue'     => 1,
-				'subtractAmount'    => 0,
-			);
 			array_push( $this->converted_currencies, $default_currency );
 		}
 		$is_checkout_different_currency           = get_option( 'yay_currency_checkout_different_currency', 0 );

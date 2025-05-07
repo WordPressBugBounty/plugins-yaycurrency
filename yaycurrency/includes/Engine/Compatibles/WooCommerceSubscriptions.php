@@ -274,7 +274,7 @@ class WooCommerceSubscriptions {
 			$shipping_method_label                    = $method->label;
 			$formatted_fallback_currency_shipping_fee = YayCurrencyHelper::calculate_price_by_currency_html( $currencies_data['fallback_currency'], $shipping_fee );
 
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				$label = '' . $shipping_method_label . ': ' . $formatted_fallback_currency_shipping_fee . ' / ' . $this->get_period_string( $cart->recurring_cart_key );
 			} else {
@@ -302,7 +302,7 @@ class WooCommerceSubscriptions {
 
 			$formatted_fallback_currency_shipping_fee = YayCurrencyHelper::calculate_price_by_currency_html( $currencies_data['fallback_currency'], $shipping_fee );
 
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				$price_label = $formatted_fallback_currency_shipping_fee . ' / ' . $this->get_period_string( $cart->recurring_cart_key );
 			} else {
@@ -329,7 +329,7 @@ class WooCommerceSubscriptions {
 			$subtotal                                = $this->get_subtotal_price_sign_up_fee( $this->apply_currency );
 			$formatted_convert_recurring_cart_amount = YayCurrencyHelper::format_price( $subtotal );
 
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				$data['recurring_amount'] = $convert_recurring_cart_amount;
 			} else {
@@ -400,7 +400,7 @@ class WooCommerceSubscriptions {
 			$converted_tax_amount           = YayCurrencyHelper::calculate_price_by_currency_html( $currencies_data['fallback_currency'], $amount );
 			$formatted_converted_tax_amount = YayCurrencyHelper::format_price( $total_tax );
 
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				$amount_html = $converted_tax_amount . ' / ' . $this->get_period_string( $recurring_cart->recurring_cart_key );
 			} else {
@@ -456,7 +456,7 @@ class WooCommerceSubscriptions {
 
 			$formatted_convert_recurring_cart_amount = YayCurrencyHelper::format_price( $recurring_total_apply_currency );
 
-			$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $this->apply_currency );
+			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 			if ( ! $converted_approximately ) {
 				$order_total_html = '<strong>' . $convert_recurring_total . '</strong> / ' . $this->get_period_string( $cart->recurring_cart_key );
 			} else {

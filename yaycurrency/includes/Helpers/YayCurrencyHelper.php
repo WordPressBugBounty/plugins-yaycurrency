@@ -67,7 +67,7 @@ class YayCurrencyHelper {
 
 	public static function disable_fallback_option_in_checkout_page( $apply_currency = array() ) {
 		$is_dis_checkout_diff_currency = self::is_dis_checkout_diff_currency( $apply_currency );
-		$checkout_blocks               = apply_filters( 'yay_currency_is_checkout_blocks', false ); // checkout use gutenberg blocks
+		$checkout_blocks               = SupportHelper::is_checkout_blocks(); // checkout use gutenberg blocks
 		$is_checkout_page              = is_checkout() || $checkout_blocks || apply_filters( 'yay_currency_disable_fallback_checkout_conditions', false );
 		$order_received_page           = $is_checkout_page && is_wc_endpoint_url( 'order-pay' ) || is_wc_endpoint_url( 'order-received' );
 		return $is_dis_checkout_diff_currency && ( $is_checkout_page || $order_received_page );
@@ -214,15 +214,28 @@ class YayCurrencyHelper {
 		if ( isset( $_REQUEST['yay-currency-nonce'] ) && wp_verify_nonce( sanitize_key( $_REQUEST['yay-currency-nonce'] ), 'yay-currency-check-nonce' ) ) {
 
 			if ( isset( $_POST['currency'] ) ) {
+				do_action( 'yay_currency_before_change_currency_switcher', $_POST );
+
+				$old_apply_currency = Helper::get_default_currency();
+
 				$selected_currency_id = sanitize_text_field( $_POST['currency'] );
 				$apply_currency       = self::get_currency_by_ID( $selected_currency_id );
 				self::set_cookie_currency_switcher( $selected_currency_id );
+
+				do_action( 'yay_currency_after_change_currency_switcher', $apply_currency, $old_apply_currency );
 			}
 
 			if ( isset( $_POST['yay_currency'] ) && isset( $_POST['yay_currency_current_url'] ) ) {
+				do_action( 'yay_currency_before_change_currency_switcher', $_POST );
+
+				$old_apply_currency = Helper::get_default_currency();
+
 				$selected_currency_id = sanitize_text_field( $_POST['yay_currency'] );
 				$current_url          = sanitize_text_field( $_POST['yay_currency_current_url'] );
 				self::set_cookie_currency_switcher( $selected_currency_id );
+
+				do_action( 'yay_currency_after_change_currency_switcher', $apply_currency, $old_apply_currency );
+
 				do_action( 'yay_currency_redirect_to_url', $current_url, $selected_currency_id );
 			}
 		}
@@ -367,15 +380,10 @@ class YayCurrencyHelper {
 		return false;
 	}
 
-	public static function format_price( $price = 0 ) {
-		$formatted_price = wc_price( $price );
-		$apply_currency  = self::detect_current_currency();
-		if ( $apply_currency ) {
-			$formatted_price = wc_price(
-				$price,
-				self::get_apply_currency_format_info( $apply_currency )
-			);
-		}
+	public static function format_price( $price = 0, $apply_currency = array() ) {
+		$apply_currency  = $apply_currency ? $apply_currency : self::detect_current_currency();
+		$format          = self::get_apply_currency_format_info( $apply_currency );
+		$formatted_price = wc_price( $price, $format );
 		return $formatted_price;
 	}
 
@@ -429,19 +437,19 @@ class YayCurrencyHelper {
 		$format = $format_currency_position;
 
 		if ( isset( $currency_info['currencyCodePosition'] ) ) {
-
+			$currency_code = apply_filters( 'yay_currency_switcher_change_currency_code', $currency_info['currency'] );
 			switch ( $currency_info['currencyCodePosition'] ) {
 				case 'left':
-					$format = $currency_info['currency'] . $format_currency_position;
+					$format = $currency_code . $format_currency_position;
 					break;
 				case 'right':
-					$format = $format_currency_position . $currency_info['currency'];
+					$format = $format_currency_position . $currency_code;
 					break;
 				case 'left_space':
-					$format = $currency_info['currency'] . ' ' . $format_currency_position;
+					$format = $currency_code . ' ' . $format_currency_position;
 					break;
 				case 'right_space':
-					$format = $format_currency_position . ' ' . $currency_info['currency'];
+					$format = $format_currency_position . ' ' . $currency_code;
 					break;
 				case 'not_display':
 					$format = $format_currency_position;
@@ -492,7 +500,7 @@ class YayCurrencyHelper {
 	}
 
 	public static function enable_rounding_currency( $apply_currency = array() ) {
-		return $apply_currency && 'disabled' !== $apply_currency['roundingType'];
+		return $apply_currency && 'disabled' !== $apply_currency['roundingType'] || apply_filters( 'yay_currency_recalculate_with_3rd_plugins', false );
 	}
 
 	public static function round_price_by_currency( $price = 0, $apply_currency = array() ) {
@@ -520,6 +528,7 @@ class YayCurrencyHelper {
 		} elseif ( apply_filters( 'yay_currency_round_product_price', true ) ) {
 			$round_type     = apply_filters( 'yay_currency_round_type', PHP_ROUND_HALF_UP );
 			$number_decimal = isset( $apply_currency['numberDecimal'] ) ? $apply_currency['numberDecimal'] : get_option( 'woocommerce_price_num_decimals' );
+			$number_decimal = ! empty( $number_decimal ) ? $number_decimal : '0';
 			$price          = round( $price, $number_decimal, $round_type );
 		}
 
@@ -669,8 +678,8 @@ class YayCurrencyHelper {
 		if ( ! $apply_currency ) {
 			$apply_currency = self::get_default_apply_currency( self::converted_currency() );
 		}
-
-		$price = number_format( $price, $apply_currency['numberDecimal'], $apply_currency['decimalSeparator'], $apply_currency['thousandSeparator'] );
+		$number_decimal = isset( $apply_currency['numberDecimal'] ) && ! empty( $apply_currency['numberDecimal'] ) ? $apply_currency['numberDecimal'] : 0;
+		$price          = number_format( $price, $number_decimal, $apply_currency['decimalSeparator'], $apply_currency['thousandSeparator'] );
 		return $price;
 	}
 

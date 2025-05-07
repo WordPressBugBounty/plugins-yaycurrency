@@ -30,7 +30,12 @@ class AdvancedProductFieldsForWooCommerce {
 		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
 
 		// CalCulate Total Wapf Price
-		add_action( 'woocommerce_before_calculate_totals', array( $this, 'recalculate_pricing' ), 9 );
+
+		if ( $this->lite_version ) {
+			add_action( 'woocommerce_before_calculate_totals', array( $this, 'recalculate_pricing' ), 9 );
+		} else {
+			add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
+		}
 
 		// Script Convert Wapf Price To Current Currency
 		add_action( 'wp_footer', array( $this, 'convert_wapf_price_script' ), 999 );
@@ -54,6 +59,28 @@ class AdvancedProductFieldsForWooCommerce {
 
 	// CalCulate Total Wapf Price
 
+	public function product_addons_set_cart_contents( $cart_contents, $cart_item_key, $cart_item, $apply_currency ) {
+
+		// get apply currency again --- apply for force payment
+		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
+
+		if ( isset( $cart_item['wapf_item_price'] ) && ! empty( $cart_item['wapf_item_price'] ) ) {
+			$wapf_item_price = $cart_item['wapf_item_price'];
+			$product_id      = ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : $cart_item['product_id'];
+			$original_price  = wc_get_product( $product_id )->get_price( 'edit' );
+			$currency_price  = apply_filters( 'yay_currency_convert_price', $original_price, $apply_currency );
+
+			$options_total         = isset( $wapf_item_price['options_total'] ) ? $wapf_item_price['options_total'] : 0;
+			$options_total_convert = apply_filters( 'yay_currency_convert_price', $options_total, $apply_currency );
+
+			SupportHelper::set_cart_item_objects_property( $cart_contents[ $cart_item_key ]['data'], 'price_with_options_default', $original_price + $options_total );
+			SupportHelper::set_cart_item_objects_property( $cart_contents[ $cart_item_key ]['data'], 'price_with_options_by_currency', $currency_price + $options_total_convert );
+			SupportHelper::set_cart_item_objects_property( $cart_contents[ $cart_item_key ]['data'], 'wapf_item_price_options_default', $options_total );
+			SupportHelper::set_cart_item_objects_property( $cart_contents[ $cart_item_key ]['data'], 'wapf_item_price_options', $options_total_convert );
+
+		}
+	}
+
 	private function calculate_total_addon_price( $cart_item_wapf = array() ) {
 		$total_addon_price = 0;
 		foreach ( $cart_item_wapf as $field ) {
@@ -70,71 +97,6 @@ class AdvancedProductFieldsForWooCommerce {
 		return $total_addon_price;
 	}
 
-	private function retrieve_option_data_lite( $cart_item, $apply_currency ) {
-
-		$original_price             = $cart_item['data']->get_price( 'edit' );
-		$currency_price             = YayCurrencyHelper::calculate_price_by_currency( $original_price, false, $apply_currency );
-		$total_addon_price          = self::calculate_total_addon_price( $cart_item['wapf'] );
-		$total_addon_price_currency = YayCurrencyHelper::calculate_price_by_currency( $total_addon_price, false, $apply_currency );
-
-		return array(
-			'options_total_default'       => $total_addon_price,
-			'options_total_currency'      => $total_addon_price_currency,
-			'currency_price'              => $currency_price,
-			'original_price'              => $original_price,
-			'price_with_options'          => $original_price + $total_addon_price,
-			'price_with_options_currency' => $currency_price + $total_addon_price_currency,
-		);
-
-	}
-
-	private function retrieve_option_data( $cart_item, $apply_currency ) {
-
-		$quantity       = ! empty( $cart_item['quantity'] ) ? $cart_item['quantity'] : 1;
-		$product_id     = ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : $cart_item['product_id'];
-		$product        = wc_get_product( $product_id );
-		$original_price = $product->get_price( 'edit' );
-		$currency_price = YayCurrencyHelper::calculate_price_by_currency( $original_price, false, $apply_currency );
-
-		$options_total_default = 0;
-		$options_total         = 0;
-
-		foreach ( $cart_item['wapf'] as $field ) {
-			if ( ! empty( $field['values'] ) ) {
-				foreach ( $field['values'] as $value ) {
-					if ( 0 === $value['price'] || 'none' === $value['price_type'] ) {
-						continue;
-					}
-					$v                             = isset( $value['slug'] ) ? $value['label'] : $field['raw'];
-					$qty_based                     = ( isset( $field['clone_type'] ) && 'qty' === $field['clone_type'] ) || ! empty( $field['qty_based'] );
-					$price                         = Fields::do_pricing( $qty_based, $value['price_type'], $value['price'], $original_price, $quantity, $v, $product_id, $cart_item['wapf'], $cart_item['wapf_field_groups'], isset( $cart_item['wapf_clone'] ) ? $cart_item['wapf_clone'] : 0, $options_total );
-					$price_default_not_apply_fixed = false;
-					if ( in_array( $value['price_type'], array( 'p', 'percent' ), true ) ) {
-						$price = (float) ( $price / YayCurrencyHelper::get_rate_fee( $apply_currency ) );
-
-						$price_default_not_apply_fixed = $original_price * ( $value['price'] / 100 );
-						$price_default_not_apply_fixed = (float) $field['qty_based'] ? $price_default_not_apply_fixed : $price_default_not_apply_fixed / $quantity;
-					}
-					$options_total         = $options_total + $price;
-					$options_total_default = $options_total_default + ( $price_default_not_apply_fixed ? $price_default_not_apply_fixed : $price );
-				}
-			}
-		}
-
-		$options_total_currency = YayCurrencyHelper::calculate_price_by_currency( $options_total, false, $apply_currency );
-
-		$data = array(
-			'options_total_default'       => $options_total_default,
-			'options_total_currency'      => $options_total_currency,
-			'currency_price'              => $currency_price,
-			'original_price'              => $original_price,
-			'price_with_options'          => $original_price + $options_total,
-			'price_with_options_currency' => $currency_price + $options_total_currency,
-		);
-
-		return $data;
-	}
-
 	public function recalculate_pricing( $cart_obj ) {
 		// get apply currency again --- apply for force payment
 		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
@@ -142,23 +104,24 @@ class AdvancedProductFieldsForWooCommerce {
 		foreach ( $cart_obj->get_cart() as $key => $item ) {
 
 			$cart_item = WC()->cart->cart_contents[ $key ];
+
 			if ( empty( $cart_item['wapf'] ) ) {
 				continue;
 			}
 
-			if ( $this->lite_version ) {
-				$wapf_data = self::retrieve_option_data_lite( $cart_item, $apply_currency );
-			} else {
-				$wapf_data = $this->retrieve_option_data( $cart_item, $apply_currency );
-			}
+			$product_id     = ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : $cart_item['product_id'];
+			$original_price = wc_get_product( $product_id )->get_price( 'edit' );
 
-			if ( ! empty( $wapf_data ) ) {
-				SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'price_with_options_default', $wapf_data['price_with_options'] );
-				SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'price_with_options_by_currency', $wapf_data['price_with_options_currency'] );
-				SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'wapf_item_price_options_default', $wapf_data['options_total_default'] );
-				SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'wapf_item_price_options', $wapf_data['options_total_currency'] );
-				SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'wapf_item_base_price', $wapf_data['currency_price'] );
-			}
+			$currency_price = apply_filters( 'yay_currency_convert_price', $original_price, $apply_currency );
+
+			$total_addon_price          = self::calculate_total_addon_price( $cart_item['wapf'] );
+			$total_addon_price_currency = apply_filters( 'yay_currency_convert_price', $total_addon_price, $apply_currency );
+
+			SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'price_with_options_default', $original_price + $total_addon_price );
+			SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'price_with_options_by_currency', $currency_price + $total_addon_price_currency );
+			SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'wapf_item_price_options_default', $total_addon_price );
+			SupportHelper::set_cart_item_objects_property( WC()->cart->cart_contents[ $key ]['data'], 'wapf_item_price_options', $total_addon_price_currency );
+
 		}
 	}
 

@@ -44,6 +44,19 @@ class HivePress {
 		add_filter( 'yay_currency_get_price_options_default_by_cart_item', array( $this, 'get_price_options_default_by_cart_item' ), 10, 4 );
 
 		add_filter( 'hivepress/v1/forms/booking_make', array( $this, 'alter_booking_make_form' ), PHP_INT_MAX, 2 );
+		add_filter( 'yay_currency_get_fee_amount_after_calculate', array( $this, 'yay_currency_get_fee_amount_after_calculate' ), 10, 2 );
+
+	}
+
+	public function yay_currency_get_fee_amount_after_calculate( $amount, $fee ) {
+
+		if ( class_exists( '\HivePress\Controllers\Marketplace' ) ) {
+			if ( 'service-fee' === $fee->id || 'direct-payment' === $fee->id ) {
+				return $fee->amount;
+			}
+		}
+
+		return $amount;
 	}
 
 	public function hivepress_item_extra_price( $price_extra ) {
@@ -70,13 +83,13 @@ class HivePress {
 			SupportHelper::set_cart_item_objects_property( $cart_contents[ $key ]['data'], 'yay_currency_hp_price_change_by_default', $hp_price_change );
 
 			$product_id            = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
-			$product_price_default = SupportHelper::get_product_price( $product_id );
+			$product_price_default = (float) SupportHelper::get_product_price( $product_id );
 			$product               = wc_get_product( $product_id );
 
 			$product_price = YayCurrencyHelper::calculate_price_by_currency( $product_price_default, false, $apply_currency );
 
 			SupportHelper::set_cart_item_objects_property( $cart_contents[ $key ]['data'], 'yay_currency_hp_product_price_by_currency', $product_price + $hp_price_change_by_currency );
-			SupportHelper::set_cart_item_objects_property( $cart_contents[ $key ]['data'], 'yay_currency_hp_product_price_by_default', $hp_price_change );
+			SupportHelper::set_cart_item_objects_property( $cart_contents[ $key ]['data'], 'yay_currency_hp_product_price_by_default', $product_price_default + $hp_price_change );
 
 		}
 
@@ -136,13 +149,13 @@ class HivePress {
 	}
 
 	protected function get_price_options() {
-		$options = [];
+		$options = array();
 		if ( get_option( 'hp_booking_enable_quantity' ) ) {
-			$options = [
+			$options = array(
 				''             => esc_html__( 'per place per day', 'hivepress-bookings' ),
 				'per_quantity' => esc_html__( 'per place', 'hivepress-bookings' ),
 				'per_item'     => esc_html__( 'per day', 'hivepress-bookings' ),
-			];
+			);
 		} else {
 			$options[''] = esc_html__( 'per day', 'hivepress-bookings' );
 		}

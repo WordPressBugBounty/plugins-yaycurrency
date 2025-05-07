@@ -186,7 +186,16 @@
             });
 
             $(document).on('click', switcher_args.customOptionArrow, function () {
-                const currencyID = $(this).data('value') ? $(this).data('value') : $(this).data('currency-id');
+                let currencyID = $(this).data('value') ? $(this).data('value') : $(this).data('currency-id');
+                if (!currencyID) {
+                    const className = $(this).attr('class');
+                    const match = className.match(/yay-currency-id-(\d+)/);
+                    if (match) {
+                        currencyID = match[1];
+                        YayCurrency_Callback.Helper.setCookie(yayCurrency.cookie_name ?? 'yay_currency_widget', currencyID, 1);
+                        location.reload();
+                    }
+                }
                 const countryCode = $(this)
                     .children(switcher_args.currencyFlag)
                     .data('country_code');
@@ -195,7 +204,6 @@
                 YayCurrency_Callback.Helper.setCookie(yayCurrency.cookie_switcher_name ?? 'yay_currency_do_change_switcher', currencyID, 1);
                 if (!$(this).hasClass(switcher_args.selectedClass)) {
                     const clickedSwitcher = $(this).closest(switcher_args.customSelect);
-
                     $(this)
                         .parent()
                         .find(switcher_args.customOptionArrowSelected)
@@ -285,7 +293,71 @@
                 }
             }
         },
+        approximatePriceCheckoutBlocks: function (currencyID) {
+            if (YayCurrency_Callback.Helper.detectCheckoutBlocks()) {
+                const applyCurrency = YayCurrency_Callback.Helper.getCurrentCurrency(currencyID);
+                const turn_off_checkout = ('0' === yayCurrency.checkout_diff_currency && yayCurrency.default_currency_code !== applyCurrency.currency) || ('1' === yayCurrency.checkout_diff_currency && '0' === applyCurrency.status);
+                if (turn_off_checkout) {
+                    // Run on page load
+                    YayCurrency_Callback.Helper.addApproximatePrices(applyCurrency);
 
+                    // Observe DOM changes
+                    const observer = new MutationObserver(function (mutations) {
+                        YayCurrency_Callback.Helper.addApproximatePrices(applyCurrency);
+                    });
+                    observer.observe(document.querySelector('.wc-block-checkout'), { childList: true, subtree: true });
+
+                    // Cleanup
+                    $(window).on('unload', function () {
+                        observer.disconnect();
+                    });
+                }
+            }
+
+        },
+        addApproximatePrices: function (applyCurrency) {
+            $('.wc-block-checkout__order-summary-item__total-price, .wc-block-formatted-money-amount').each(function () {
+                if (!$(this).find('.yay-currency-checkout-converted-approximately').length) {
+                    const priceText = $(this).text().trim(); // e.g., "1_234 56" or "1,234.56 €"
+                    let numericValue = YayCurrency_Callback.Helper.parsePrice(priceText);
+
+                    if (!isNaN(numericValue)) {
+                        const approximatePriceHTML = YayCurrency_Callback.Helper.approximatePriceHTML(numericValue, applyCurrency);
+                        $(this).append(approximatePriceHTML);
+                    }
+                }
+            });
+        },
+        parsePrice: function (priceText) {
+            // Remove all non-numeric characters except potential separators
+            let cleanPrice = priceText.replace(/[^0-9\s_,.]/g, '').trim(); // Keep digits, spaces, commas, dots, underscores
+            if (!cleanPrice) {
+                return 0; // Return 0 if no numeric content
+            }
+
+            // Split by all possible separators
+            let allParts = cleanPrice.split(/[\s_,.]+/); // Split by space, comma, dot, underscore
+            if (allParts.length < 1) {
+                return parseFloat(cleanPrice) || 0; // No separators, treat as whole number
+            }
+
+            // The last part is the decimal portion (keep all digits)
+            let decimalPart = allParts.pop() || '0';
+            let integerPart = allParts.join(''); // Join remaining parts as integer
+
+            // Combine with a standard decimal separator
+            let combinedPrice = integerPart + (decimalPart ? '.' + decimalPart : '');
+
+            // Parse to float, preserving the original decimal places
+            let numericValue = parseFloat(combinedPrice) || 0;
+
+            return numericValue;
+        },
+        approximatePriceHTML: function (originalPrice, applyCurrency) {
+            const approximatePrice = YayCurrency_Callback.Helper.formatPriceByCurrency(originalPrice, true, applyCurrency)
+            const price_html = " <span class='yay-currency-checkout-converted-approximately'>(~" + approximatePrice + ")</span>";
+            return price_html;
+        },
         // Converter
         getCurrentCurrencyByCode: function (currency_code = false, converted_currency = false) {
             currency_code = currency_code ? currency_code : window.yayCurrency.default_currency_code;

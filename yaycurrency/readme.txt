@@ -2,8 +2,8 @@
 Contributors: YayCommerce
 Tags: currency switcher, multi currency, woocommerce, currency, currency converter, multicurrency
 Requires at least: 3.0
-Tested up to: 6.7
-Stable tag: 3.1.0
+Tested up to: 6.8
+Stable tag: 3.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,29 +11,33 @@ WooCommerce Multi-Currency made easy, powerful, and flexible.
 
 == Description ==
 
-YayCurrency is a powerful **WooCommerce multi-currency plugin** that is feature-packed in a simplified user interface.
+**Seamless Multi-Currency Experience for WooCommerce**
 
-Instead of showing the prices in a single currency, it allows your customers to **switch currency in WooCommerce** and convert product prices to their preferred currency unit. You will be able to manage conversion fees, update exchange rates, set up pretty price rounding, and all that **without having to code**!
+YayCurrency makes it easy to sell globally by enabling your WooCommerce store to **display and accept payments in multiple currencies**. 
 
-**Key Features:**
+[Admin Demo](https://demo.yaycommerce.com/try-yaycurrency/) | [Quick Demo](https://demo.yaycommerce.com/yaycurrency/product/cap/) | As seen on [WPMayor](https://wpmayor.com/service/product-review-checkout/)    ✅
 
-**Local Currency Checkout:** Customers can pay in their preferred currency.
-**Order Emails in Customer's Currency:** Accurate order records are displayed in emails for each customer's chosen currency.
-**Currency-Specific Reports:** Allows for insightful analysis of sales data across different currencies.
-
-🎮 [ADMIN DEMO](https://demo.yaycommerce.com/try-yaycurrency/) | [FRONT-END DEMO](https://demo.yaycommerce.com/yaycurrency/product/cap/) ⚡️
-
-[youtube https://youtu.be/2nNiZw07S5g]
+Designed with simplicity and power in mind, it offers a smooth currency-switching experience for your international customers—no coding required.
 
 [Documentation](https://docs.yaycommerce.com/yaycurrency/main-features) | [YayCurrency Pro](https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/) 🚀
 
-Introducing YayCurrency – the perfect solution for online stores that cater to **international customers**!
+**Key Features**
 
-With this WooCommerce multi-currency switcher, you can **automatically convert prices** from USD to your customers’ local currencies, so they always know how much they’re spending. No more guesswork or confusion – just accurate, up-to-date prices that match the current exchange rate.
+**Local Currency Payments** – Let customers complete checkout in their own currency for a consistent shopping experience.
 
-Plus, YayCurrency is super easy to set up and works out of the box. Just install the plugin and choose which currencies you want to support – it’s that simple!
+**Accurate Order Emails** – Order confirmations and notifications are sent in the customer’s selected currency, ensuring clarity.
 
-So why wait? Make your international customers happy with YayCurrency today!
+**Multi-Currency Reporting** – Gain insights into sales performance across currencies with dedicated reporting tools.
+
+**Automatic Exchange Rates** – Keep prices accurate and up-to-date with live exchange rate updates.
+
+**Customizable Conversion Fees & Rounding** – Apply conversion margins and round prices neatly to suit your pricing strategy.
+
+**Perfect for Global Stores**
+
+Whether you're selling in USD, EUR, GBP, or beyond, YayCurrency allows you to display product prices in local currencies and handle payments accordingly. It works out of the box with a quick and intuitive setup, helping you create a frictionless shopping experience for customers worldwide.
+
+[youtube https://youtu.be/2nNiZw07S5g]
 
 ###⚡️ FEATURES
 
@@ -176,8 +180,19 @@ To quickly get the answers, please attach screenshots of currently active WooCom
 
 == Changelog ==
 
+= May 7, 2025 - Version 3.2 =
+- Added: Finance API options (Pro)
+- Added: ETH cryptocurrency
+- Fixed: Compatible with Barn2 Discount and ProductAddOnsUltimate
+- Fixed: Compatible with JetSmartFilters
+- Fixed: Compatible with WooCommerce Appointments plugin
+- Fixed: Barn2 WooCommerce Wholesale Pro plugin
+- Fixed: Warning Function _load_textdomain_just_in_time was called incorrectly
+- Fixed: Warning Format numbers for cryptocurrencies
+- Fixed: Shipping costs and taxes not being rounded correctly
+
 = Jan 9, 2025 - Version 3.1.0 =
-- Fixed: Not saved N/A value when auto update exchange rate. --- Pro version only
+- Fixed: Not saved N/A value when auto update exchange rate (Pro)
 - Fixed: Compatible with WoodMart theme.
 - Fixed: Compatible with Woo Payment Discounts plugin.
 - Fixed: Compatible with YITH WooCommerce AddOns Extra Premium Options plugin.

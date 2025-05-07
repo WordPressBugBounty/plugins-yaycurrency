@@ -183,6 +183,49 @@ class SupportHelper {
 		return $total_quantity;
 	}
 
+	public static function get_total_coupons( $cart_subtotal = 0, $apply_currency = false ) {
+		$total_coupon_applies = 0;
+		$applied_coupons      = WC()->cart->applied_coupons;
+		if ( $applied_coupons ) {
+			foreach ( $applied_coupons  as $coupon_code ) {
+				$coupon          = new \WC_Coupon( $coupon_code );
+				$discount_type   = $coupon->get_discount_type();
+				$coupon_data     = $coupon->get_data();
+				$discount_amount = (float) $coupon_data['amount'];
+
+				if ( 'percent' !== $discount_type ) {
+
+					if ( 'fixed_product' === $discount_type ) {
+						$discount_amount *= self::get_product_quantity_item_qty( true );
+					}
+
+					if ( apply_filters( 'yay_currency_incl_tax_enable', false ) ) {
+						$discount_totals     = WC()->cart->get_coupon_discount_totals();
+						$discount_tax_totals = WC()->cart->get_coupon_discount_tax_totals();
+						$discount_totals     = wc_array_merge_recursive_numeric( $discount_totals, $discount_tax_totals );
+						$discount_amount     = $discount_totals[ $coupon->get_code() ];
+					}
+
+					if ( apply_filters( 'yay_currency_excl_tax_enable', false ) ) {
+						$tax_rate_percent = apply_filters( 'yay_currency_get_rate_percent_in_cart', false );
+						if ( $tax_rate_percent ) {
+							$discount_amount = $discount_amount / ( 1 + $tax_rate_percent );
+						}
+					}
+
+					if ( $apply_currency ) {
+						$discount_amount = YayCurrencyHelper::calculate_price_by_currency( $discount_amount, true, $apply_currency );
+					}
+
+					$total_coupon_applies += $discount_amount;
+				} else {
+					$total_coupon_applies += ( $cart_subtotal * $discount_amount ) / 100;
+				}
+			}
+		}
+		return $total_coupon_applies;
+	}
+
 	public static function get_shipping_flat_rate_fee_total_selected( $apply_currency = array(), $calculate_default = false, $calculate_tax = false ) {
 		$shipping = WC()->session->get( 'shipping_for_package_0' );
 		if ( ! $shipping || ! isset( $shipping['rates'] ) ) {
@@ -294,6 +337,10 @@ class SupportHelper {
 			$priority = PHP_INT_MAX;
 		}
 
+		if ( class_exists( '\Packetery\Module\Plugin' ) ) {
+			$priority = PHP_INT_MAX;
+		}
+
 		return apply_filters( 'yay_currency_fee_priority', $priority );
 	}
 
@@ -303,23 +350,6 @@ class SupportHelper {
 		}
 
 		return apply_filters( 'yay_currency_format_filters_priority', $priority );
-	}
-
-	public static function should_change_email_symbol( $flag = false ) {
-
-		if ( defined( 'WCQP_VERSION' ) ) {
-			$flag = true;
-		}
-
-		if ( class_exists( 'KCO' ) ) {
-			$flag = true;
-		}
-
-		if ( function_exists( 'Mollie\WooCommerce\mollie_wc_plugin_autoload' ) || function_exists( 'grilabs_woocommerce_pos_init' ) ) {
-			$flag = true;
-		}
-
-		return apply_filters( 'yay_currency_email_change_currency_symbol', $flag );
 	}
 
 	public static function detect_keep_old_currency_symbol( $flag, $is_dis_checkout_diff_currency, $apply_currency ) {
@@ -339,6 +369,11 @@ class SupportHelper {
 		}
 
 		if ( defined( 'SUBSCRIPTIONS_FOR_WOOCOMMERCE_VERSION' ) ) {
+			$flag = true;
+		}
+
+		// Custom Product Boxes: https://wisdmlabs.com/assorted-bundles-woocommerce-custom-product-boxes-plugin/
+		if ( class_exists( 'Custom_Product_Boxes' ) ) {
 			$flag = true;
 		}
 
@@ -407,7 +442,63 @@ class SupportHelper {
 		do_action( 'yay_currency_admin_deregister_script' );
 	}
 
-	public static function display_approximate_price_on_checkout() {
-		return apply_filters( 'yay_currency_display_approximate_price_on_checkout', false );
+	public static function display_approximately_converted_price( $apply_currency ) {
+		return apply_filters( 'yay_currency_checkout_converted_approximately', true, $apply_currency );
+	}
+
+	public static function display_approximate_price_checkout_only() {
+		return apply_filters( 'yay_currency_display_approximate_price_checkout_only', false );
+	}
+
+	// WooCommerce Block support
+
+	public static function rest_api_endpoints() {
+		$endpoints = array(
+			'/wc/store/v1/batch', // Cart updates
+			'/wc/store/v1/checkout', // Checkout submission and state updates (including payment method)
+			'/wc/store/v1/cart/select-shipping-rate', // Shipping updates
+			'/wc/store/v1/cart/update-customer', // Phone, email, billing updates
+			'/wc/store/v1/checkout/update-order', // Order updates (may include payment method changes)
+		);
+
+		return apply_filters( 'yay_currency_block_rest_api_endpoints', $endpoints );
+	}
+
+	public static function detect_rest_api_doing() {
+		if ( ! WC()->is_rest_api_request() ) {
+			return false;
+		}
+		$rest_route = Helper::get_rest_route_via_rest_api();
+		if ( $rest_route && in_array( $rest_route, self::rest_api_endpoints(), true ) && isset( $_REQUEST['_locale'] ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	public static function detect_checkout_blocks() {
+
+		$rest_route = Helper::get_rest_route_via_rest_api();
+
+		if ( ! $rest_route ) {
+			return false;
+		}
+
+		if ( self::detect_rest_api_doing() && isset( $_COOKIE['yay_checkout_blocks_page'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public static function is_checkout_blocks() {
+
+		$flag = false;
+
+		if ( self::detect_checkout_blocks() ) {
+			$flag = true;
+		}
+
+		return apply_filters( 'yay_currency_is_checkout_blocks', $flag );
+
 	}
 }

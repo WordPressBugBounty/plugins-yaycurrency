@@ -30,8 +30,6 @@ class WooCommerceCheckoutPage {
 		add_filter( 'yay_currency_get_fee_total_default', array( $this, 'get_fee_total_default' ), 10, 2 );
 		add_filter( 'yay_currency_get_total_tax_default', array( $this, 'get_total_tax_default' ), 10, 2 );
 
-		// Blocks
-		add_filter( 'yay_currency_is_checkout_blocks', array( $this, 'yay_currency_is_checkout_blocks' ), 10, 2 );
 	}
 
 	public function checkout_converted_cart_subtotal( $converted_subtotal, $apply_currency ) {
@@ -77,7 +75,8 @@ class WooCommerceCheckoutPage {
 		$shipping_total  = $this->get_shipping_total_selected( $apply_currency );
 		$taxes_in_cart   = $this->get_info_taxes_include_in_cart( $apply_currency, $shipping_total );
 		$total_tax_fees  = $this->get_total_fees( $apply_currency, true );
-		$cart_total      = ( $cart_subtotal + $shipping_total + $total_tax_fees + $taxes_in_cart['total_tax'] ) - $taxes_in_cart['total_coupon'];
+		$total_coupon    = isset( $taxes_in_cart['total_coupon'] ) && $taxes_in_cart['total_coupon'] ? $taxes_in_cart['total_coupon'] : apply_filters( 'yay_currency_get_discount_total', 0, $apply_currency );
+		$cart_total      = ( $cart_subtotal + $shipping_total + $total_tax_fees + $taxes_in_cart['total_tax'] ) - $total_coupon;
 		$converted_total = YayCurrencyHelper::format_price( $cart_total );
 		return $converted_total;
 	}
@@ -290,7 +289,7 @@ class WooCommerceCheckoutPage {
 	public function checkout_converted_shipping_method_full_label( $label, $method, $shipping_fee, $fallback_currency, $apply_currency ) {
 		$method_label                             = $method->label;
 		$formatted_fallback_currency_shipping_fee = YayCurrencyHelper::calculate_price_by_currency_html( $fallback_currency, $shipping_fee );
-		$converted_approximately                  = apply_filters( 'yay_currency_checkout_converted_approximately', true, $apply_currency );
+		$converted_approximately                  = SupportHelper::display_approximately_converted_price( $apply_currency );
 		if ( ! $converted_approximately ) {
 			return $method_label . ': ' . $formatted_fallback_currency_shipping_fee;
 		}
@@ -315,7 +314,7 @@ class WooCommerceCheckoutPage {
 
 		$formatted_shipping_fee = YayCurrencyHelper::format_price( $converted_shipping_fee );
 		//  Display approximate price only on the checkout page
-		if ( SupportHelper::display_approximate_price_on_checkout() ) {
+		if ( SupportHelper::display_approximate_price_checkout_only() ) {
 			return $method_label . ': ' . $formatted_shipping_fee;
 		}
 		$formatted_shipping_fee_html = YayCurrencyHelper::converted_approximately_html( $formatted_shipping_fee );
@@ -328,7 +327,7 @@ class WooCommerceCheckoutPage {
 		$discount_totals         = WC()->cart->get_coupon_discount_totals();
 		$discount_price          = $discount_totals[ $coupon->get_code() ];
 		$discount_amount_html    = YayCurrencyHelper::calculate_price_by_currency_html( $fallback_currency, $discount_price );
-		$converted_approximately = apply_filters( 'yay_currency_checkout_converted_approximately', true, $apply_currency );
+		$converted_approximately = SupportHelper::display_approximately_converted_price( $apply_currency );
 		if ( ! $converted_approximately ) {
 			return '-' . $discount_amount_html;
 		}
@@ -338,7 +337,7 @@ class WooCommerceCheckoutPage {
 			$formatted_discount_price = apply_filters( 'yay_currency_checkout_converted_discount_price', $formatted_discount_price, $coupon, $apply_currency );
 		}
 		//  Display approximate price only on the checkout page
-		if ( SupportHelper::display_approximate_price_on_checkout() ) {
+		if ( SupportHelper::display_approximate_price_checkout_only() ) {
 			return '-' . $formatted_discount_price;
 		}
 
@@ -382,46 +381,5 @@ class WooCommerceCheckoutPage {
 			$total_tax      = $taxes_in_cart ? $taxes_in_cart['total_tax'] : 0;
 		}
 		return $total_tax ? $total_tax : 0;
-	}
-
-	// Blocks
-	protected function detect_rest_api_doing() {
-
-		if ( ! WC()->is_rest_api_request() ) {
-			return false;
-		}
-
-		$rest_route = Helper::get_rest_route_via_rest_api();
-
-		if ( $rest_route && in_array( $rest_route, array( '/wc/store/v1/batch', '/wc/store/v1/checkout' ), true ) && isset( $_REQUEST['_locale'] ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	protected function detect_set_default_apply_currency_on_checkout_blocks() {
-
-		if ( ! self::detect_rest_api_doing() ) {
-			return false;
-		}
-
-		if ( ! Helper::detect_checkout_blocks_page() ) {
-			return false;
-		}
-
-		if ( ! (int) get_option( 'yay_currency_checkout_different_currency', 0 ) ) {
-			return true;
-		}
-
-		return false;
-
-	}
-
-	public function yay_currency_is_checkout_blocks( $flag ) {
-		if ( self::detect_set_default_apply_currency_on_checkout_blocks() ) {
-			return true;
-		}
-		return $flag;
 	}
 }
