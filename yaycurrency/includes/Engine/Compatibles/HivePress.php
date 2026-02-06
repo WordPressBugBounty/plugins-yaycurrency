@@ -30,7 +30,7 @@ class HivePress {
 
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
 
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );
 
 		add_filter( 'hivepress/v1/fields/currency/display_value', array( $this, 'custom_hivepress_price_by_currency_type' ), 10, 2 );
@@ -40,15 +40,15 @@ class HivePress {
 		//HivePress Marketplace
 		add_filter( 'formatted_woocommerce_price', array( $this, 'formatted_woocommerce_price' ), 10, 6 );
 
-		add_filter( 'yay_currency_get_price_options_by_cart_item', array( $this, 'get_price_options_by_cart_item' ), 10, 5 );
-		add_filter( 'yay_currency_get_price_options_default_by_cart_item', array( $this, 'get_price_options_default_by_cart_item' ), 10, 4 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_options_by_cart_item' ), 10, 5 );
+		add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_options_default_by_cart_item' ), 10, 4 );
 
 		add_filter( 'hivepress/v1/forms/booking_make', array( $this, 'alter_booking_make_form' ), PHP_INT_MAX, 2 );
-		add_filter( 'yay_currency_get_fee_amount_after_calculate', array( $this, 'yay_currency_get_fee_amount_after_calculate' ), 10, 2 );
+		add_filter( 'YayCurrency/GetFeeAmount', array( $this, 'get_fee_amount_after_calculate' ), 10, 2 );
 
 	}
 
-	public function yay_currency_get_fee_amount_after_calculate( $amount, $fee ) {
+	public function get_fee_amount_after_calculate( $amount, $fee ) {
 
 		if ( class_exists( '\HivePress\Controllers\Marketplace' ) ) {
 			if ( 'service-fee' === $fee->id || 'direct-payment' === $fee->id ) {

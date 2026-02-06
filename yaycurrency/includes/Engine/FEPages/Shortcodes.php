@@ -44,11 +44,10 @@ class Shortcodes {
 			),
 			$atts
 		);
-		ob_start();
-
 		if ( YayCurrencyHelper::detect_allow_hide_dropdown_currencies() ) {
 			return '';
 		}
+		ob_start();
 		$is_show_flag            = get_option( 'yay_currency_show_flag_in_switcher', 1 );
 		$is_show_currency_name   = get_option( 'yay_currency_show_currency_name_in_switcher', 1 );
 		$is_show_currency_symbol = get_option( 'yay_currency_show_currency_symbol_in_switcher', 1 );
@@ -111,8 +110,9 @@ class Shortcodes {
 		);
 
 		ob_start();
-		$price          = apply_filters( 'yaycurrency_get_price', $atts['price'] );
 		$apply_currency = YayCurrencyHelper::detect_current_currency();
+		$price          = isset( $atts['price'] ) && is_numeric( $atts['price'] ) ? floatval( $atts['price'] ) : 0;
+		$price          = apply_filters( 'yaycurrency_get_price', $price );
 		$price_html     = YayCurrencyHelper::calculate_price_by_currency_html( $apply_currency, $price );
 		$price_html     = apply_filters( 'yaycurrency_get_price_html', $price_html, $apply_currency );
 		echo wp_kses_post( $price_html );
@@ -158,13 +158,17 @@ class Shortcodes {
 			'yaycurrency-fee'
 		);
 
+		$atts['percent'] = isset( $atts['percent'] ) ? floatval( sanitize_text_field( $atts['percent'] ) ) : 0;
+		$min_fee         = isset( $atts['min_fee'] ) ? floatval( sanitize_text_field( $atts['min_fee'] ) ) : 0;
+		$max_fee         = isset( $atts['max_fee'] ) ? floatval( sanitize_text_field( $atts['max_fee'] ) ) : 0;
+
 		$apply_currency = YayCurrencyHelper::detect_current_currency();
 
-		$atts['min_fee'] = YayCurrencyHelper::calculate_price_by_currency( $atts['min_fee'], true, $apply_currency );
-		$atts['max_fee'] = YayCurrencyHelper::calculate_price_by_currency( $atts['max_fee'], true, $apply_currency );
+		$atts['min_fee'] = YayCurrencyHelper::calculate_price_by_currency( $min_fee, true, $apply_currency );
+		$atts['max_fee'] = YayCurrencyHelper::calculate_price_by_currency( $max_fee, true, $apply_currency );
 
-		$cart_subtotal  = apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency );
-		$calculated_fee = $this->get_fee_cost_by_shortcode( $cart_subtotal, $atts );
+		$evaluate_line_subtotal = YayCurrencyHelper::$evaluate_line_subtotal;
+		$calculated_fee         = $this->get_fee_cost_by_shortcode( $evaluate_line_subtotal, $atts );
 
 		return $calculated_fee;
 	}
@@ -180,7 +184,11 @@ class Shortcodes {
 			'yaycurrency-fee-default'
 		);
 
-		$cart_subtotal  = apply_filters( 'yay_currency_get_cart_subtotal_default', 0 );
+		$atts['percent'] = isset( $atts['percent'] ) ? floatval( sanitize_text_field( $atts['percent'] ) ) : 0;
+		$atts['min_fee'] = isset( $atts['min_fee'] ) ? floatval( sanitize_text_field( $atts['min_fee'] ) ) : 0;
+		$atts['max_fee'] = isset( $atts['max_fee'] ) ? floatval( sanitize_text_field( $atts['max_fee'] ) ) : 0;
+
+		$cart_subtotal  = apply_filters( 'YayCurrency/StoreCurrency/GetCartSubtotal', 0 );
 		$calculated_fee = $this->get_fee_cost_by_shortcode( $cart_subtotal, $atts );
 
 		return $calculated_fee;

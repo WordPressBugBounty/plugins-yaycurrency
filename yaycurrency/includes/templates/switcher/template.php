@@ -4,9 +4,9 @@ use Yay_Currency\Helpers\YayCurrencyHelper;
 
 $woo_currencies          = Helper::woo_list_currencies();
 $countries_code          = Helper::currency_code_by_country_code();
-$selected_currencies     = apply_filters( 'yay_currency_get_currencies_posts', Helper::get_currencies_post_type() );
+$selected_currencies     = apply_filters( 'YayCurrency/PostType/GetCurrencies', Helper::get_currencies_post_type() );
 $converted_currency      = YayCurrencyHelper::converted_currency( $selected_currencies );
-$selected_currency_id    = apply_filters( 'yay_currency_get_id_selected_currency', YayCurrencyHelper::get_id_selected_currency() );
+$selected_currency_id    = apply_filters( 'YayCurrency/SelectedCurrency/GetId', YayCurrencyHelper::get_id_selected_currency() );
 $yay_currency_use_params = Helper::use_yay_currency_params();
 $name                    = $yay_currency_use_params ? 'yay_currency' : 'currency';
 ?>

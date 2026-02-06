@@ -35,7 +35,7 @@ class BuyOnceOrSubscribeWooCommerceSubscriptions {
 		add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 10, 3 );
 
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'product_price_3rd_with_condition' ), 10, 2 );
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 		add_filter( 'yay_currency_get_product_price_subscription_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 
 	}

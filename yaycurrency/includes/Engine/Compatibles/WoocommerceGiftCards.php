@@ -59,7 +59,7 @@ class WoocommerceGiftCards {
 
 	public function yay_currency_woocommerce_currency_symbol( $currency_symbol, $currency, $apply_currency ) {
 		if ( doing_action( 'woocommerce_account_giftcards_endpoint' ) && $this->is_dis_checkout_diff_currency ) {
-			$currency_symbol = wp_kses_post( html_entity_decode( $this->apply_currency['symbol'] ) );
+			$currency_symbol = wp_kses_post( Helper::decode_html_entity( $this->apply_currency['symbol'] ) );
 		}
 		return $currency_symbol;
 	}

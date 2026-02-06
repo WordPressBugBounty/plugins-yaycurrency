@@ -7,15 +7,29 @@
     }
   };
 
+  // Define Filter & Action Hooks from YayCurrency
+  window.yayCurrencyHooks = {
+    addFilter: function (hookName, callback) {
+      YayCurrency_Callback.Helper.addHook('filters', hookName, callback);
+    },
+    applyFilters: YayCurrency_Callback.Helper.applyFilters,
+    addAction: function (hookName, callback) {
+      YayCurrency_Callback.Helper.addHook('actions', hookName, callback);
+    },
+    doAction: YayCurrency_Callback.Helper.doAction
+  };
+
   jQuery(document).ready(function ($) {
     yay_currency($);
     const { yayCurrency } = window;
     const currencyID = YayCurrency_Callback.Helper.getCookie(yayCurrency.cookie_name);
 
-    // Compatible with 3rd Plugins
-    YayCurrency_Callback.Helper.compatibleWithThirdPartyPlugins(currencyID);
+    // Filter by Price (WooCommerce plugin)
+    YayCurrency_Callback.Helper.handleFilterByPrice(currencyID);
 
     $(document.body).trigger('wc_fragment_refresh');
+
+    $(window).on('load resize scroll', YayCurrency_Callback.Helper.switcherUpwards());
 
     // Use Param Url
     if (yayCurrency.yay_currency_use_params) {
@@ -23,18 +37,14 @@
         YayCurrency_Callback.Helper.setCookie(yayCurrency.cookie_switcher_name ?? 'yay_currency_do_change_switcher', currencyID, 1);
       }
     }
-
-    $(window).on('load resize scroll', YayCurrency_Callback.Helper.switcherUpwards());
+    // Switcher Action
     YayCurrency_Callback.Helper.switcherAction();
-    YayCurrency_Callback.Helper.reCalculateCartSubtotalCheckoutBlocksPage();
 
     // Convert
     YayCurrency_Callback.Helper.currencyConverter();
 
-    // Display Approximate Price in Checkout Blocks pages
-    if (typeof YayCurrency_Callback.Helper.approximatePriceCheckoutBlocks === 'function' && 'yes' === yayCurrency.show_approximate_price) {
-      YayCurrency_Callback.Helper.approximatePriceCheckoutBlocks(currencyID);
-    }
+    // Compatible with third party [Themes / Plugins]
+    yayCurrencyHooks.doAction('yayCurrencyCompatibleThirdParty', [{ currencyID: currencyID }]);
 
   });
 })(jQuery);

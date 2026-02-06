@@ -22,14 +22,14 @@ class WooCommerceProductAddOnsUltimate {
 		}
 		$this->apply_currency   = YayCurrencyHelper::detect_current_currency();
 		$this->default_currency = Helper::default_currency_code();
-		add_filter( 'yay_currency_recalculate_with_3rd_plugins', '__return_true' );
+		add_filter( 'YayCurrency/ThirdPlugins/Rounding/Enable', '__return_true' );
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
 		add_filter( 'pewc_after_add_cart_item_data', array( $this, 'pewc_after_add_cart_item_data' ), 10, 1 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
-		add_filter( 'yay_currency_get_product_price_by_3rd_plugin', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ThirdPlugins/GetProductPrice', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
 
 		add_filter( 'pewc_filter_field_price', array( $this, 'pewc_yay_currency_convert_price' ), 10, 3 );
 		add_filter( 'pewc_filter_option_price', array( $this, 'pewc_yay_currency_convert_price' ), 10, 3 );

@@ -16,11 +16,11 @@ class WooPaymentDiscounts {
 		if ( class_exists( '\Woo_Payment_Discounts' ) ) {
 			$this->apply_currency                = YayCurrencyHelper::detect_current_currency();
 			$this->is_dis_checkout_diff_currency = YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency );
-			add_filter( 'yay_currency_get_fee_amount_after_calculate', array( $this, 'yay_currency_get_fee_amount_after_calculate' ), 10, 2 );
+			add_filter( 'YayCurrency/GetFeeAmount', array( $this, 'get_fee_amount_after_calculate' ), 10, 2 );
 		}
 	}
 
-	public function yay_currency_get_fee_amount_after_calculate( $amount, $fee ) {
+	public function get_fee_amount_after_calculate( $amount, $fee ) {
 		$cart = WC()->cart;
 		// Gets the settings.
 		$gateways = get_option( 'woo_payment_discounts_setting' );

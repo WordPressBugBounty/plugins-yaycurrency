@@ -35,7 +35,7 @@ class WooCommercePayPalPayments {
 
 		if ( $this->is_dis_checkout_diff_currency ) {
 
-			add_filter( 'yay_currency_disable_fallback_checkout_conditions', array( $this, 'disable_fallback_checkout_conditions' ), 10, 1 );
+			add_filter( 'YayCurrency/Detect/FallbackCurrency/CheckoutPage', array( $this, 'disable_fallback_checkout_conditions' ), 10, 1 );
 
 			add_filter( 'yay_currency_woocommerce_currency', array( $this, 'custom_currency_paypal_method' ), 10, 2 );
 			add_filter( 'yay_currency_is_original_default_currency', array( $this, 'is_original_default_currency' ), 20, 2 );

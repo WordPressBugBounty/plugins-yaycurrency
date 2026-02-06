@@ -15,25 +15,29 @@ class WooCommerceCheckoutPage {
 
 	public function __construct() {
 
-		add_filter( 'yay_currency_checkout_converted_cart_subtotal', array( $this, 'checkout_converted_cart_subtotal' ), 10, 2 );
-		add_filter( 'yay_currency_checkout_converted_discount_price', array( $this, 'checkout_converted_discount_price' ), 10, 3 );
-		add_filter( 'yay_currency_checkout_converted_tax_amount', array( $this, 'checkout_converted_tax_amount' ), 10, 3 );
-		add_filter( 'yay_currency_checkout_converted_cart_total', array( $this, 'checkout_converted_cart_total' ), 10, 3 );
+		add_filter( 'YayCurrency/Checkout/ApplyCurrency/GetConvertedSubtotal', array( $this, 'checkout_converted_cart_subtotal' ), 10, 2 );
+		add_filter( 'YayCurrency/Checkout/ApplyCurrency/Discount/GetFormattedPrice', array( $this, 'checkout_converted_discount_price' ), 10, 3 );
+		add_filter( 'YayCurrency/Checkout/ApplyCurrency/GetConvertedTotalTax', array( $this, 'checkout_converted_tax_amount' ), 10, 3 );
+		add_filter( 'YayCurrency/Checkout/ApplyCurrency/GetConvertedCartTotal', array( $this, 'checkout_converted_cart_total' ), 10, 3 );
 
-		add_filter( 'yay_currency_checkout_converted_shipping_method_full_label', array( $this, 'checkout_converted_shipping_method_full_label' ), 10, 5 );
-		add_filter( 'yay_currency_checkout_converted_cart_coupon_totals_html', array( $this, 'checkout_converted_cart_coupon_totals_html' ), 10, 4 );
+		// COUPON
+		add_filter( 'YayCurrency/Checkout/GetFormattedCoupon', array( $this, 'checkout_converted_cart_coupon_totals_html' ), 10, 4 );
+
+		// SHIPPING
+		add_filter( 'YayCurrency/Checkout/Shipping/GetFormattedLabel', array( $this, 'checkout_converted_shipping_method_full_label' ), 10, 5 );
+		add_filter( 'YayCurrency/Checkout/Shipping/FlatRateFee/GetFormattedPrice', array( $this, 'formatted_shipping_flat_rate_fee' ), 10, 3 );
 
 		// Convert to Default
-		add_filter( 'yay_currency_get_cart_total_default', array( $this, 'get_cart_total_default' ), 10, 2 );
-		add_filter( 'yay_currency_get_discount_total_default', array( $this, 'get_discount_total_default' ), 10, 2 );
-		add_filter( 'yay_currency_get_shipping_total_default', array( $this, 'get_shipping_total_default' ), 10, 2 );
-		add_filter( 'yay_currency_get_fee_total_default', array( $this, 'get_fee_total_default' ), 10, 2 );
-		add_filter( 'yay_currency_get_total_tax_default', array( $this, 'get_total_tax_default' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetCartTotal', array( $this, 'get_cart_total_default' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetDiscountTotal', array( $this, 'get_discount_total_default' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetShippingTotal', array( $this, 'get_shipping_total_default' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetFeeTotal', array( $this, 'get_fee_total_default' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetTotalTax', array( $this, 'get_total_tax_default' ), 10, 2 );
 
 	}
 
 	public function checkout_converted_cart_subtotal( $converted_subtotal, $apply_currency ) {
-		$cart_subtotal      = apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency );
+		$cart_subtotal      = apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotal', 0, $apply_currency );
 		$converted_subtotal = YayCurrencyHelper::format_price( $cart_subtotal );
 		return $converted_subtotal;
 	}
@@ -41,7 +45,7 @@ class WooCommerceCheckoutPage {
 	public function checkout_converted_discount_price( $formatted_discount_price, $coupon, $apply_currency ) {
 		$discount_type   = $coupon->get_discount_type();
 		$discount_amount = (float) $coupon->get_amount();
-		$cart_subtotal   = apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency );
+		$cart_subtotal   = apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotal', 0, $apply_currency );
 		if ( 'percent' !== $discount_type ) {
 			if ( 'fixed_product' === $discount_type ) {
 				$discount_totals          = WC()->cart->get_coupon_discount_totals();
@@ -70,12 +74,12 @@ class WooCommerceCheckoutPage {
 	}
 
 	public function checkout_converted_cart_total( $converted_total, $total_price, $apply_currency ) {
-		$cart_subtotal = apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency );
+		$cart_subtotal = apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotal', 0, $apply_currency );
 
 		$shipping_total  = $this->get_shipping_total_selected( $apply_currency );
 		$taxes_in_cart   = $this->get_info_taxes_include_in_cart( $apply_currency, $shipping_total );
 		$total_tax_fees  = $this->get_total_fees( $apply_currency, true );
-		$total_coupon    = isset( $taxes_in_cart['total_coupon'] ) && $taxes_in_cart['total_coupon'] ? $taxes_in_cart['total_coupon'] : apply_filters( 'yay_currency_get_discount_total', 0, $apply_currency );
+		$total_coupon    = isset( $taxes_in_cart['total_coupon'] ) && $taxes_in_cart['total_coupon'] ? $taxes_in_cart['total_coupon'] : apply_filters( 'YayCurrency/ApplyCurrency/GetDiscountTotal', 0, $apply_currency );
 		$cart_total      = ( $cart_subtotal + $shipping_total + $total_tax_fees + $taxes_in_cart['total_tax'] ) - $total_coupon;
 		$converted_total = YayCurrencyHelper::format_price( $cart_total );
 		return $converted_total;
@@ -295,24 +299,8 @@ class WooCommerceCheckoutPage {
 		}
 
 		$converted_shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $shipping_fee, true, $apply_currency );
-		if ( 'flat_rate' === $method->method_id ) {
-			$shipping = new \WC_Shipping_Flat_Rate( $method->instance_id );
-			$cost     = $shipping->get_option( 'cost' );
-			if ( ! empty( $cost ) && ! is_numeric( $cost ) ) {
-				$converted_shipping_fee = SupportHelper::evaluate_cost(
-					$cost,
-					array(
-						'qty'  => SupportHelper::get_product_quantity_item_qty(),
-						'cost' => apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency ),
-					)
-				);
-				if ( ! strpos( $cost, 'fee' ) ) {
-					$converted_shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $converted_shipping_fee, true, $apply_currency );
-				}
-			}
-		}
-
 		$formatted_shipping_fee = YayCurrencyHelper::format_price( $converted_shipping_fee );
+		$formatted_shipping_fee = apply_filters( 'YayCurrency/Checkout/Shipping/FlatRateFee/GetFormattedPrice', $formatted_shipping_fee, $method, $apply_currency );
 		//  Display approximate price only on the checkout page
 		if ( SupportHelper::display_approximate_price_checkout_only() ) {
 			return $method_label . ': ' . $formatted_shipping_fee;
@@ -320,6 +308,18 @@ class WooCommerceCheckoutPage {
 		$formatted_shipping_fee_html = YayCurrencyHelper::converted_approximately_html( $formatted_shipping_fee );
 		$label                       = $method_label . ': ' . $formatted_fallback_currency_shipping_fee . $formatted_shipping_fee_html;
 		return $label;
+	}
+
+	public function formatted_shipping_flat_rate_fee( $formatted_shipping_fee, $method, $apply_currency ) {
+		if ( 'flat_rate' === $method->method_id ) {
+			$data         = array( 'apply_currency' => $apply_currency );
+			$shipping_fee = SupportHelper::get_total_shipping_fee_flat_rate_method( 0, $method, $data );
+			if ( ! $shipping_fee || empty( $shipping_fee ) ) {
+				return $formatted_shipping_fee;
+			}
+			$formatted_shipping_fee = YayCurrencyHelper::format_price( $shipping_fee );
+		}
+		return $formatted_shipping_fee;
 	}
 
 	public function checkout_converted_cart_coupon_totals_html( $coupon_html, $coupon, $fallback_currency, $apply_currency ) {
@@ -334,7 +334,7 @@ class WooCommerceCheckoutPage {
 		$converted_discount_price = YayCurrencyHelper::calculate_price_by_currency( $discount_price, true, $apply_currency );
 		$formatted_discount_price = YayCurrencyHelper::format_price( $converted_discount_price );
 		if ( YayCurrencyHelper::enable_rounding_currency( $apply_currency ) ) {
-			$formatted_discount_price = apply_filters( 'yay_currency_checkout_converted_discount_price', $formatted_discount_price, $coupon, $apply_currency );
+			$formatted_discount_price = apply_filters( 'YayCurrency/Checkout/ApplyCurrency/Discount/GetFormattedPrice', $formatted_discount_price, $coupon, $apply_currency );
 		}
 		//  Display approximate price only on the checkout page
 		if ( SupportHelper::display_approximate_price_checkout_only() ) {
@@ -347,18 +347,18 @@ class WooCommerceCheckoutPage {
 	}
 
 	public function get_cart_total_default( $cart_total, $apply_currency ) {
-		$cart_subtotal_default = apply_filters( 'yay_currency_get_cart_subtotal_default', 0 );
+		$cart_subtotal_default = apply_filters( 'YayCurrency/StoreCurrency/GetCartSubtotal', 0 );
 		$shipping_total        = $this->get_shipping_total_selected( $apply_currency, true );
 		$total_coupon_applies  = $this->get_total_coupon_default( $cart_subtotal_default );
 		$total_fees            = $this->get_total_fees( $apply_currency, true, true );
 
-		$total_tax  = apply_filters( 'yay_currency_get_total_tax_default', 0, $apply_currency );
+		$total_tax  = apply_filters( 'YayCurrency/StoreCurrency/GetTotalTax', 0, $apply_currency );
 		$cart_total = ( $cart_subtotal_default - $total_coupon_applies ) + $total_tax + $shipping_total + $total_fees;
 		return $cart_total;
 	}
 
 	public function get_discount_total_default( $discount_total, $apply_currency ) {
-		$cart_subtotal_default = apply_filters( 'yay_currency_get_cart_subtotal_default', 0 );
+		$cart_subtotal_default = apply_filters( 'YayCurrency/StoreCurrency/GetCartSubtotal', 0 );
 		$discount_total        = $this->get_total_coupon_default( $cart_subtotal_default );
 
 		return $discount_total;

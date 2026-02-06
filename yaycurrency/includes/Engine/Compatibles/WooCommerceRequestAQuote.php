@@ -1,6 +1,7 @@
 <?php
 namespace Yay_Currency\Engine\Compatibles;
 
+use Yay_Currency\Helpers\Helper;
 use Yay_Currency\Helpers\SupportHelper;
 use Yay_Currency\Utils\SingletonTrait;
 use Yay_Currency\Helpers\YayCurrencyHelper;
@@ -44,7 +45,7 @@ class WooCommerceRequestAQuote {
 		add_filter( 'addify_quote_item_subtotal', array( $this, 'addify_quote_item_subtotal' ), 10, 3 );
 		add_filter( 'addify_rfq_quote_totals', array( $this, 'addify_rfq_quote_totals' ), 10, 1 );
 
-		add_filter( 'yay_currency_cart_item_addon_data', array( $this, 'yay_currency_cart_item_addon_data' ), 9999, 5 );
+		add_filter( 'YayCurrency/ProductAddons/CartItem/GetAddonData', array( $this, 'cart_item_addon_data' ), 9999, 5 );
 
 	}
 
@@ -264,7 +265,7 @@ class WooCommerceRequestAQuote {
 
 	public function change_existing_currency_symbol( $currency_symbol, $currency ) {
 		if ( wp_doing_ajax() ) {
-			$currency_symbol = wp_kses_post( html_entity_decode( $this->apply_currency['symbol'] ) );
+			$currency_symbol = wp_kses_post( Helper::decode_html_entity( $this->apply_currency['symbol'] ) );
 		} else {
 			$post_id = false;
 			if ( ! is_admin() ) {
@@ -345,7 +346,7 @@ class WooCommerceRequestAQuote {
 		return $quote_totals;
 	}
 
-	public function yay_currency_cart_item_addon_data( $cart_item_addon_data_value, $args, $cart_item, $addon, $apply_currency ) {
+	public function cart_item_addon_data( $cart_item_addon_data_value, $args, $cart_item, $addon, $apply_currency ) {
 		if ( isset( $cart_item['yay_currency_added'] ) ) {
 			$item_fee = (float) $addon['price'];
 			$afrfq_id = get_query_var( 'request-quote' );

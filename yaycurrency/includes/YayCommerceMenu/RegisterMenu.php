@@ -169,14 +169,16 @@ class RegisterMenu {
 			}
 		}
 		if ( ! $has_plugin_menu ) {
-			add_submenu_page( 'yaycommerce', __( 'YayCurrency', 'yay-currency' ), __( 'YayCurrency', 'yay-currency' ), 'manage_woocommerce', 'yay_currency', array( $this, 'render_placeholder_menu' ), 0 );
+			$page_id = add_submenu_page( 'yaycommerce', __( 'YayCurrency', 'yay-currency' ), __( 'YayCurrency', 'yay-currency' ), 'manage_woocommerce', 'yay_currency', '__return_false', 0 );
+			add_action( 'load-' . $page_id, array( $this, 'redirect_to_licenses' ) );
 		}
 	}
 
 	/**
 	 * Redirect to licenses when visit placeholder menu
 	 */
-	public function render_placeholder_menu() {
-		wp_safe_redirect( admin_url( 'admin.php?page="yaycommerce-licenses"' ) );
+	public function redirect_to_licenses() {
+		wp_safe_redirect( admin_url( 'admin.php?page=yaycommerce-licenses' ) );
+		exit;
 	}
 }

@@ -28,9 +28,9 @@ class WooCommercePointsAndRewards {
 		// handle the apply discount AJAX submit on the cart page
 		add_action( 'wp', array( $this, 'detect_currency_apply_discount_cart' ), 20 );
 		add_action( 'init', array( $this, 'detect_currency_apply_discount_checkout' ), 20 );
-		add_filter( 'yay_currency_converted_coupon_price', array( $this, 'converted_coupon_price' ), 10, 4 );
+		add_filter( 'YayCurrency/GetCouponAmount', array( $this, 'converted_coupon_price' ), 10, 3 );
 		// Fallback
-		add_filter( 'yay_currency_get_amount_coupon_price_fallback_currency', array( $this, 'get_amount_coupon_price_fallback_currency' ), 10, 3 );
+		add_filter( 'YayCurrency/StoreCurrency/GetCouponAmount', array( $this, 'get_amount_coupon_price_fallback_currency' ), 10, 3 );
 
 		add_filter( 'wc_points_rewards_my_points_events', array( $this, 'points_rewards_my_points_events' ), 20, 2 );
 	}
@@ -155,7 +155,7 @@ class WooCommercePointsAndRewards {
 		return $coupon_price;
 	}
 
-	public function converted_coupon_price( $converted_coupon_price, $coupon, $price, $apply_currency ) {
+	public function converted_coupon_price( $converted_coupon_price, $coupon, $apply_currency ) {
 		$coupon_price = $this->convert_amount_coupon_price_to_default( $converted_coupon_price, $coupon );
 		if ( ! $coupon_price ) {
 			return $converted_coupon_price;

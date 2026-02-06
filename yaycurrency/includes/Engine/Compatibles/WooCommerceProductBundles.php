@@ -28,7 +28,7 @@ class WooCommerceProductBundles {
 
 		add_filter( 'woocommerce_bundle_container_cart_item', array( $this, 'woocommerce_bundle_container_cart_item' ), 20, 2 );
 		add_filter( 'woocommerce_bundled_cart_item', array( $this, 'woocommerce_bundled_cart_item' ), 20, 2 );
-		add_filter( 'yay_currency_is_change_format_order_line_subtotal', array( $this, 'is_change_format_order_line_subtotal' ), 10, 4 );
+		add_filter( 'YayCurrency/Order/AllowChange/FormattedLineSubtotal', array( $this, 'is_change_format_order_line_subtotal' ), 10, 4 );
 	}
 
 	public function get_container_cart_item_subtotal( $subtotal, $cart_item, $cart_item_key, $wc_pb_display ) {

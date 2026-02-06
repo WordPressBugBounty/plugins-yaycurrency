@@ -52,9 +52,12 @@ class AdvancedProductFieldsForWooCommerce {
 		}
 
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_product_price_with_options' ), 999, 2 );
-		add_filter( 'yay_currency_get_price_options_by_cart_item', array( $this, 'get_price_with_options_for_cart_item' ), 10, 5 );
-		add_filter( 'yay_currency_get_price_options_default_by_cart_item', array( $this, 'get_default_price_with_options_for_cart_item' ), 10, 4 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_with_options_for_cart_item' ), 10, 5 );
+		add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_default_price_with_options_for_cart_item' ), 10, 4 );
 
+		if ( defined( 'ELEMENTOR_PRO_VERSION' ) ) {
+			add_filter( 'woocommerce_cart_subtotal', array( $this, 'recalculate_cart_subtotal_mini_cart' ), 10, 3 );
+		}
 	}
 
 	// CalCulate Total Wapf Price
@@ -229,7 +232,6 @@ class AdvancedProductFieldsForWooCommerce {
 		return $amount;
 	}
 
-	// Change the Meta Label for Addon Field Prices
 	private function convert_add_on_label( $meta_value, $wapf, $pattern = false ) {
 		$currency_applied = isset( $wapf['yay_currency_wapf_added'] ) && ! empty( $wapf['yay_currency_wapf_added'] ) ? $wapf['yay_currency_wapf_added'] : false;
 
@@ -239,22 +241,49 @@ class AdvancedProductFieldsForWooCommerce {
 			$meta_value    = str_replace( ' ' . $currency_code, '', $meta_value );
 			$meta_value    = str_replace( $currency_code, '', $meta_value );
 		}
-		$decimals = $currency_applied['decimalSeparator'];
+		$decimals           = $currency_applied['decimalSeparator'];
+		$thousand_separator = $currency_applied['thousandSeparator'];
 
 		if ( ! $pattern ) {
-			$pattern = '/([+-])([^\d\s]+)(\d+(' . preg_quote( $decimals, '/' ) . '\d{2})?)/';
+			// Pattern to match numbers with any combination of . and , as separators
+			$pattern = '/([+-])([^\d\s]+)((?:\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|\d+(?:[.,]\d+)?))/';
 			$index   = 3;
-
 		} else {
+			// Pattern to match numbers with any combination of . and , as separators
+			// $pattern = '/([+-])((?:\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|\d+(?:[.,]\d+)?))\s*([^\d\s\)]+)/';
 			$pattern = '/([+-])(\d+(' . preg_quote( $decimals, '/' ) . '\d+)?)\s*([^\d\s\)]+)/';
 			$index   = 2;
 		}
 
 		$add_on_label = preg_replace_callback(
 			$pattern,
-			function ( $matches ) use ( $index ) {
-				$newValue     = YayCurrencyHelper::calculate_price_by_currency( floatval( $matches[ $index ] ), false, $this->apply_currency );
-				$format_price = preg_replace( '/<[^>]+>/', '', YayCurrencyHelper::format_price( $newValue ) );
+			function ( $matches ) use ( $index, $decimals, $thousand_separator ) {
+				$number = $matches[ $index ];
+
+				// If the number contains both . and , we need to determine which is which
+				if ( strpos( $number, '.' ) !== false && strpos( $number, ',' ) !== false ) {
+					// Count occurrences of each separator
+					$dot_count   = substr_count( $number, '.' );
+					$comma_count = substr_count( $number, ',' );
+
+					// The one that appears more times is likely the thousand separator
+					if ( $dot_count > $comma_count ) {
+						$number = str_replace( '.', '', $number ); // Remove thousand separator
+						$number = str_replace( ',', '.', $number ); // Convert decimal separator
+					} else {
+						$number = str_replace( ',', '', $number ); // Remove thousand separator
+					}
+				} elseif ( '.' === $decimals ) {
+						$number = str_replace( ',', '', $number ); // Remove thousand separator
+				} else {
+					$number = str_replace( '.', '', $number ); // Remove thousand separator
+					$number = str_replace( ',', '.', $number ); // Convert decimal separator
+
+				}
+
+				$newValue = YayCurrencyHelper::calculate_price_by_currency( floatval( $number ), false, $this->apply_currency );
+				// $format_price = preg_replace( '/<[^>]+>/', '', YayCurrencyHelper::format_price( $newValue ) );
+				$format_price = preg_replace( '/<[^>]+>/', '', YayCurrencyHelper::format_price( $newValue, $this->apply_currency ) );
 				return $matches[1] . $format_price;
 			},
 			$meta_value
@@ -360,5 +389,33 @@ class AdvancedProductFieldsForWooCommerce {
 	public function get_default_price_with_options_for_cart_item( $price_options, $cart_item, $product_id, $original_price ) {
 		$wapf_item_price_options_default = SupportHelper::get_cart_item_objects_property( $cart_item['data'], 'wapf_item_price_options_default' );
 		return $wapf_item_price_options_default ? (float) $wapf_item_price_options_default : $price_options;
+	}
+
+	public function recalculate_cart_subtotal_mini_cart( $cart_subtotal, $compound, $cart ) {
+		// Check if this is being called from the mini cart
+		if ( ! wp_doing_ajax() || ! isset( $_REQUEST['wc-ajax'] ) || 'get_refreshed_fragments' !== $_REQUEST['wc-ajax'] ) {
+			return $cart_subtotal;
+		}
+
+		$cart_contents = WC()->cart->get_cart_contents();
+		if ( count( $cart_contents ) > 0 ) {
+			$subtotal      = $this->calculate_cart_subtotal( $cart_contents );
+			$cart_subtotal = YayCurrencyHelper::calculate_custom_price_by_currency_html( $this->apply_currency, $subtotal );
+		}
+		return $cart_subtotal;
+	}
+
+	private function calculate_cart_subtotal( $cart_contents ) {
+		$subtotal = 0;
+		foreach ( $cart_contents  as $key => $cart_item ) {
+			$product_obj                    = $cart_item['data'];
+			$price_with_options_by_currency = SupportHelper::get_cart_item_objects_property( $product_obj, 'price_with_options_by_currency' );
+			if ( $price_with_options_by_currency ) {
+				$subtotal += $price_with_options_by_currency * $cart_item['quantity'];
+			} else {
+				$subtotal += $product_obj->get_price() * $cart_item['quantity'];
+			}
+		}
+		return $subtotal;
 	}
 }

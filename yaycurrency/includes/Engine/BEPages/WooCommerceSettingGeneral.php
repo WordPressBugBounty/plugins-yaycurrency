@@ -3,6 +3,7 @@ namespace Yay_Currency\Engine\BEPages;
 
 use Yay_Currency\Utils\SingletonTrait;
 use Yay_Currency\Helpers\Helper;
+use Yay_Currency\Helpers\RateHelper;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -23,41 +24,27 @@ class WooCommerceSettingGeneral {
 
 	// Update Currency when save WooCommerce Setting General
 	public function update_currency_option( $value, $option, $raw_value ) {
-		$currencies = Helper::get_currencies_post_type();
-		if ( $currencies ) {
-			$this->currency_update = $value;
-			$currency_update       = Helper::get_yay_currency_by_currency_code( $value );
-			if ( ! $currency_update ) {
-				Helper::create_new_currency( $value, true );
-			} else {
-				update_post_meta( $currency_update->ID, 'rate', '1' );
-				update_post_meta(
-					$currency_update->ID,
-					'fee',
-					array(
-						'value' => '0',
-						'type'  => get_post_meta(
-							$currency_update->ID,
-							'fee'
-						)[0]['type'],
-					)
-				);
+		$currencies            = Helper::get_currencies_post_type();
+		$this->currency_update = $value;
+		$default_currency_code = Helper::default_currency_code();
+		if ( $currencies && $default_currency_code !== $value ) {
+			RateHelper::sync_currency_exchange_rates( $value, $default_currency_code, true );
+			if ( class_exists( 'WC_Cache_Helper' ) ) {
+				\WC_Cache_Helper::get_transient_version( 'product', true ); // Update product price (currency) after change value.
 			}
-			Helper::update_exchange_rate_currency( $currencies, $value );
-			\WC_Cache_Helper::get_transient_version( 'product', true ); // Update product price (currency) after change value.
 		}
 		return $value;
 	}
 
 	public function update_currency_meta_option( $value, $option, $raw_value ) {
-		if ( ! empty( $this->currency_update ) ) {
-			$currency_update = Helper::get_yay_currency_by_currency_code( $this->currency_update );
-			$option_name     = isset( $option['id'] ) && ! empty( $option['id'] ) ? $option['id'] : false;
-			$currency_id     = isset( $currency_update->ID ) && $currency_update->ID ? $currency_update->ID : false;
+		$currency_update = Helper::get_yay_currency_by_currency_code( $this->currency_update );
+
+		if ( $currency_update ) {
+			$option_name = isset( $option['id'] ) && ! empty( $option['id'] ) ? $option['id'] : false;
+			$currency_id = isset( $currency_update->ID ) && $currency_update->ID ? $currency_update->ID : false;
 
 			if ( $currency_id && $option_name ) {
 				$option_key = false;
-
 				switch ( $option_name ) {
 					case 'woocommerce_currency_pos':
 						$option_key = 'currency_position';
@@ -74,7 +61,6 @@ class WooCommerceSettingGeneral {
 					default:
 						break;
 				}
-
 				if ( $option_key ) {
 					update_post_meta( $currency_id, $option_key, $value );
 				}

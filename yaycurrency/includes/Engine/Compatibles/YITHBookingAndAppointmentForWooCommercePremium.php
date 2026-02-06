@@ -22,8 +22,8 @@ class YITHBookingAndAppointmentForWooCommercePremium {
 		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
 
 		add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 10, 3 );
-		add_filter( 'yay_currency_get_product_price_default_by_cart_item', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
+		add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 
 		add_filter( 'yith_wcbk_booking_product_get_price', array( $this, 'convert_currency_price' ), 10, 2 );
 		add_filter( 'yith_wcbk_get_price_to_display', array( $this, 'convert_currency_price' ), 10, 2 ); // For totals.

@@ -47,7 +47,7 @@ class B2BMarket {
 
 		add_filter( 'bm_filter_update_price_response', array( $this, 'custom_update_price_response' ), 10, 3 );
 
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 
 	}
 

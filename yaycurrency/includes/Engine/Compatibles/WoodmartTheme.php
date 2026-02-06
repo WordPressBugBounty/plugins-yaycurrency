@@ -20,7 +20,7 @@ class WoodmartTheme {
 			$this->apply_currency                = YayCurrencyHelper::detect_current_currency();
 			$this->is_dis_checkout_diff_currency = YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency );
 
-			add_filter( 'yay_currency_get_price_with_conditions', array( $this, 'yay_currency_get_price_with_conditions' ), 10, 3 );
+			add_filter( 'YayCurrency/ThirdPlugins/GetPrice', array( $this, 'get_price_with_conditions' ), 10, 3 );
 
 			add_filter( 'yay_currency_detect_action_args', array( $this, 'yay_currency_detect_action_args' ), 10, 1 );
 
@@ -32,15 +32,14 @@ class WoodmartTheme {
 
 			add_action( 'woodmart_shipping_progress_bar_amount', array( $this, 'woodmart_yay_currency_convert_price_limit' ), PHP_INT_MAX, 1 );
 
-			if ( class_exists( 'JEMTR_Table_Rate_Shipping_Method' ) ) {
-				add_filter( 'woocommerce_cart_get_cart_contents_total', array( $this, 'woocommerce_cart_get_cart_contents_total' ), PHP_INT_MAX, 1 );
-				add_filter( 'woocommerce_cart_get_cart_contents_tax', array( $this, 'woocommerce_cart_get_cart_contents_tax' ), PHP_INT_MAX, 1 );
-			}
+			add_filter( 'woocommerce_cart_get_cart_contents_total', array( $this, 'woocommerce_cart_get_cart_contents_total' ), PHP_INT_MAX, 1 );
+			add_filter( 'woocommerce_cart_get_cart_contents_tax', array( $this, 'woocommerce_cart_get_cart_contents_tax' ), PHP_INT_MAX, 1 );
+
 		}
 
 	}
 
-	public function yay_currency_get_price_with_conditions( $price, $product, $apply_currency ) {
+	public function get_price_with_conditions( $price, $product, $apply_currency ) {
 		if ( wp_doing_ajax() && isset( $_REQUEST['action'] ) && 'woodmart_ajax_search' === $_REQUEST['action'] ) {
 			return false;
 		}
@@ -53,14 +52,14 @@ class WoodmartTheme {
 	}
 
 	public function woocommerce_cart_get_cart_contents_total( $total ) {
-		if ( Helper::is_method_executed( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
+		if ( class_exists( 'JEMTR_Table_Rate_Shipping_Method' ) && Helper::is_method_executed( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
 			$total = $total / YayCurrencyHelper::get_rate_fee( $this->apply_currency );
 		}
 		return $total;
 	}
 
 	public function woocommerce_cart_get_cart_contents_tax( $total_tax ) {
-		if ( Helper::is_method_executed( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
+		if ( class_exists( 'JEMTR_Table_Rate_Shipping_Method' ) && Helper::is_method_executed( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
 			$total_tax = $total_tax / YayCurrencyHelper::get_rate_fee( $this->apply_currency );
 		}
 		return $total_tax;

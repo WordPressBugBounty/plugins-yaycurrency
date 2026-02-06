@@ -8,6 +8,8 @@ class YayCurrencyHelper {
 
 	private static $COOKIE_NAME     = 'yay_currency_widget';
 	private static $COOKIE_SWITCHER = 'yay_currency_do_change_switcher';
+	// calculate line subtotal with shortcode [yaycurrency-fee]
+	public static $evaluate_line_subtotal = 0;
 
 	protected function __construct() {}
 
@@ -68,7 +70,7 @@ class YayCurrencyHelper {
 	public static function disable_fallback_option_in_checkout_page( $apply_currency = array() ) {
 		$is_dis_checkout_diff_currency = self::is_dis_checkout_diff_currency( $apply_currency );
 		$checkout_blocks               = SupportHelper::is_checkout_blocks(); // checkout use gutenberg blocks
-		$is_checkout_page              = is_checkout() || $checkout_blocks || apply_filters( 'yay_currency_disable_fallback_checkout_conditions', false );
+		$is_checkout_page              = is_checkout() || $checkout_blocks || apply_filters( 'YayCurrency/Detect/FallbackCurrency/CheckoutPage', false );
 		$order_received_page           = $is_checkout_page && is_wc_endpoint_url( 'order-pay' ) || is_wc_endpoint_url( 'order-received' );
 		return $is_dis_checkout_diff_currency && ( $is_checkout_page || $order_received_page );
 	}
@@ -87,14 +89,14 @@ class YayCurrencyHelper {
 			}
 		}
 
-		setcookie( self::$COOKIE_NAME, $cookie_value, time() + ( 86400 * 30 ), '/' );
+		self::set_cookie( self::$COOKIE_NAME, $cookie_value );
 
 		$_COOKIE[ self::$COOKIE_NAME ] = $cookie_value;
 
 	}
 
 	public static function set_cookie( $cookie_name, $cookie_value ) {
-		setcookie( $cookie_name, $cookie_value, time() + ( 86400 * 30 ), '/' );
+		setcookie( $cookie_name, (string) $cookie_value, time() + ( 86400 * 30 ), '/' );
 	}
 
 	public static function delete_cookie( $cookie_name ) {
@@ -135,7 +137,7 @@ class YayCurrencyHelper {
 
 	// WooCommerce Product Price Filter hooks
 
-	public static function get_woocommerce_product_price_hooks() {
+	public static function get_product_price_hooks() {
 		$product_price_hooks = array(
 			'woocommerce_product_get_price',
 			'woocommerce_product_get_regular_price',
@@ -149,7 +151,7 @@ class YayCurrencyHelper {
 			'woocommerce_variation_prices_regular_price',
 			'woocommerce_variation_prices_sale_price',
 		);
-		return apply_filters( 'yay_currency_get_product_price_hooks', $product_price_hooks );
+		return $product_price_hooks;
 	}
 
 	// GET CURRENT CURRENCY & APPLY CURRENCY
@@ -168,7 +170,7 @@ class YayCurrencyHelper {
 		return array(
 			'ID'                   => $currency->ID,
 			'currency'             => $currency->post_title,
-			'currencyPosition'     => $currency_meta['currency_position'][0],
+			'currencyPosition'     => $currency_meta['currency_position'][0] ?? 'left',
 			'currencyCodePosition' => isset( $currency_meta['currency_code_position'] ) && ! empty( $currency_meta['currency_code_position'][0] ) ? $currency_meta['currency_code_position'][0] : 'not_display',
 			'thousandSeparator'    => isset( $currency_meta['thousand_separator'][0] ) ? $currency_meta['thousand_separator'][0] : Helper::default_thousand_separator(),
 			'decimalSeparator'     => isset( $currency_meta['decimal_separator'][0] ) ? $currency_meta['decimal_separator'][0] : Helper::default_decimal_separator(),
@@ -236,7 +238,7 @@ class YayCurrencyHelper {
 
 				do_action( 'yay_currency_after_change_currency_switcher', $apply_currency, $old_apply_currency );
 
-				do_action( 'yay_currency_redirect_to_url', $current_url, $selected_currency_id );
+				do_action( 'YayCurrency/RedirectToUrl', $current_url, $selected_currency_id );
 			}
 		}
 
@@ -247,6 +249,15 @@ class YayCurrencyHelper {
 			$apply_currency_by_code = self::get_currency_by_currency_code( strtoupper( $currency_code ) );
 			$apply_currency         = $apply_currency_by_code ? $apply_currency_by_code : $apply_currency;
 			self::set_cookie_currency_switcher( $apply_currency['ID'] );
+		}
+
+		// Get Currency From Order setup in Pay for Order
+		if ( isset( $_REQUEST['pay_for_order'] ) && isset( $_REQUEST['key'] ) ) {
+			$order_key = sanitize_text_field( wp_unslash( $_REQUEST['key'] ) );
+			$order_id  = wc_get_order_id_by_order_key( $order_key );
+			if ( $order_id && is_numeric( $order_id ) ) {
+				$apply_currency = self::get_order_currency_by_order_id( $order_id );
+			}
 		}
 
 		$apply_currency = apply_filters( 'yay_currency_apply_currency', $apply_currency );
@@ -334,9 +345,29 @@ class YayCurrencyHelper {
 		return apply_filters( 'yay_currency_detect_wc_ajax_args', $wc_ajax_args );
 	}
 
+	public static function should_run_for_request() {
+		$is_rest = ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || WC()->is_rest_api_request();
+
+		if ( $is_rest ) {
+			$rest_route = isset( $_SERVER['REQUEST_URI'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+			: '';
+
+			// Skip all WooCommerce CRUD REST API requests but keep Store API.
+			if (
+			strpos( $rest_route, '/wp-json/wc/' ) !== false &&
+			strpos( $rest_route, '/wp-json/wc/store/' ) === false
+			) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static function is_reload_permitted() {
 
-		if ( apply_filters( 'yay_currency_detect_block_convert_price', false ) ) {
+		if ( apply_filters( 'YayCurrency/ConvertPrice/NotPermitted', false ) ) {
 			return false;
 		}
 
@@ -387,6 +418,15 @@ class YayCurrencyHelper {
 		return $formatted_price;
 	}
 
+	public static function formatted_price_by_currency( $price = 0, $apply_currency = array() ) {
+		$apply_currency  = $apply_currency ? $apply_currency : self::detect_current_currency();
+		$price           = self::format_price_currency( $price, $apply_currency );
+		$format          = self::format_currency_symbol( $apply_currency );
+		$formatted_price = sprintf( $format, '<span class="woocommerce-Price-currencySymbol">' . $apply_currency['symbol'] . '</span>', $price );
+		$return          = '<span class="woocommerce-Price-amount amount"><bdi>' . $formatted_price . '</bdi></span><span>';
+		return apply_filters( 'yaycurrency_formatted_price_by_currency', $return, $price, $format, $apply_currency );
+	}
+
 	public static function format_sale_price( $regular_price, $sale_price ) {
 		$formatted_price = '<del aria-hidden="true">' . ( is_numeric( $regular_price ) ? wc_price( $regular_price ) : $regular_price ) . '</del> <ins>' . ( is_numeric( $sale_price ) ? wc_price( $sale_price ) : $sale_price ) . '</ins>';
 		$apply_currency  = self::detect_current_currency();
@@ -399,6 +439,14 @@ class YayCurrencyHelper {
 		return $formatted_price;
 	}
 
+	public static function formatted_sale_price_by_currency( $regular_price = 0, $sale_price = 0, $apply_currency = array() ) {
+		$apply_currency  = $apply_currency ? $apply_currency : self::detect_current_currency();
+		$regular_price   = self::formatted_price_by_currency( $regular_price, $apply_currency );
+		$sale_price      = self::formatted_price_by_currency( $sale_price, $apply_currency );
+		$formatted_price = '<del aria-hidden="true">' . $regular_price . '</del> <ins>' . $sale_price . '</ins>';
+		return apply_filters( 'yaycurrency_formatted_sale_price_by_currency', $formatted_price, $regular_price, $sale_price, $apply_currency );
+	}
+
 	public static function get_apply_currency_format_info( $apply_currency = array() ) {
 		$currency_code              = $apply_currency['currency'];
 		$format                     = self::format_currency_position( $apply_currency['currencyPosition'] );
@@ -409,6 +457,8 @@ class YayCurrencyHelper {
 			'thousand_separator' => $apply_currency['thousandSeparator'],
 			'decimals'           => Helper::default_currency_code() === $currency_code ? Helper::default_price_num_decimals() : $apply_currency['numberDecimal'],
 			'price_format'       => $format,
+			'in_span'            => true,
+			'aria-hidden'        => true,
 		);
 		return $apply_currency_format_info;
 
@@ -437,7 +487,7 @@ class YayCurrencyHelper {
 		$format = $format_currency_position;
 
 		if ( isset( $currency_info['currencyCodePosition'] ) ) {
-			$currency_code = apply_filters( 'yay_currency_switcher_change_currency_code', $currency_info['currency'] );
+			$currency_code = apply_filters( 'YayCurrency/Frontend/Switcher/GetCurrencyCode', $currency_info['currency'] );
 			switch ( $currency_info['currencyCodePosition'] ) {
 				case 'left':
 					$format = $currency_code . $format_currency_position;
@@ -500,7 +550,7 @@ class YayCurrencyHelper {
 	}
 
 	public static function enable_rounding_currency( $apply_currency = array() ) {
-		return $apply_currency && 'disabled' !== $apply_currency['roundingType'] || apply_filters( 'yay_currency_recalculate_with_3rd_plugins', false );
+		return $apply_currency && 'disabled' !== $apply_currency['roundingType'] || apply_filters( 'YayCurrency/ThirdPlugins/Rounding/Enable', false );
 	}
 
 	public static function round_price_by_currency( $price = 0, $apply_currency = array() ) {
@@ -525,8 +575,8 @@ class YayCurrencyHelper {
 				default:
 					break;
 			}
-		} elseif ( apply_filters( 'yay_currency_round_product_price', true ) ) {
-			$round_type     = apply_filters( 'yay_currency_round_type', PHP_ROUND_HALF_UP );
+		} elseif ( apply_filters( 'YayCurrency/Round/Price', true ) ) {
+			$round_type     = apply_filters( 'YayCurrency/Round/Type', PHP_ROUND_HALF_UP );
 			$number_decimal = isset( $apply_currency['numberDecimal'] ) ? $apply_currency['numberDecimal'] : get_option( 'woocommerce_price_num_decimals' );
 			$number_decimal = ! empty( $number_decimal ) ? $number_decimal : '0';
 			$price          = round( $price, $number_decimal, $round_type );
@@ -542,10 +592,6 @@ class YayCurrencyHelper {
 
 			if ( ! $exclude ) {
 				$price = self::round_price_by_currency( $price, $apply_currency );
-			}
-
-			if ( apply_filters( 'yay_currency_should_format_product_price', false, $price, $apply_currency ) ) {
-				$price = number_format( $price, $apply_currency['numberDecimal'], $apply_currency['decimalSeparator'], $apply_currency['thousandSeparator'] );
 			}
 		}
 		return $price;
@@ -621,7 +667,10 @@ class YayCurrencyHelper {
 			'decimals'           => $is_default_currency ? Helper::default_price_num_decimals() : $convert_currency['numberDecimal'],
 			'price_format'       => $format,
 		);
-
+		// Fix the issue with the decimals being empty in the wc_price function
+		if ( '' === $args['decimals'] ) {
+			$args['decimals'] = 0;
+		}
 		$formatted_total = wc_price( $price, $args );
 		return $formatted_total;
 

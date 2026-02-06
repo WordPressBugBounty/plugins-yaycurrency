@@ -27,7 +27,7 @@ class WoocommerceCustomProductAddons {
 
 		add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 10, 3 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'product_price_3rd_with_condition' ), 10, 2 );
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 
 	}
 

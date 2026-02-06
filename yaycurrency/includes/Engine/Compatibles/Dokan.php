@@ -5,6 +5,7 @@ use Yay_Currency\Utils\SingletonTrait;
 use Yay_Currency\Helpers\Helper;
 use Yay_Currency\Helpers\YayCurrencyHelper;
 use WeDevs\Dokan\Cache;
+use Automattic\WooCommerce\Utilities\NumberUtil;
 
 // Dokan Pro
 use WeDevs\DokanPro\REST\LogsController;
@@ -25,8 +26,7 @@ class Dokan {
 			return;
 		}
 
-		$this->default_currency = Helper::default_currency_code();
-
+		$this->default_currency       = Helper::default_currency_code();
 		$this->converted_currency     = YayCurrencyHelper::converted_currency();
 		$this->apply_currency         = YayCurrencyHelper::detect_current_currency();
 		$this->apply_default_currency = YayCurrencyHelper::get_default_apply_currency( $this->converted_currency );
@@ -35,16 +35,16 @@ class Dokan {
 			return;
 		}
 
+		// Caching
+		add_action( 'yay_currency_allow_detect_caching', array( $this, 'allow_detect_caching' ), 10, 1 );
+		add_filter( 'yay_currency_localize_args', array( $this, 'add_localize_args' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'frontend_enqueue_scripts' ) );
 
 		// CUSTOM PRICE FORMAT TO DEFAULT CURRENCY
 		add_filter( 'yay_currency_woocommerce_currency_symbol', array( $this, 'custom_currency_symbol' ), 10, 3 );
-		add_filter( 'yay_currency_custom_thousand_separator', array( $this, 'custom_thousand_separator' ), 10, 2 );
-		add_filter( 'yay_currency_custom_decimal_separator', array( $this, 'custom_decimal_separator' ), 10, 2 );
-		add_filter( 'yay_currency_custom_number_decimal', array( $this, 'custom_number_decimal' ), 10, 2 );
-		add_filter( 'yay_currency_custom_price_format', array( $this, 'custom_price_format' ), 10, 2 );
-
+		add_filter( 'yay_currency_get_price_format', array( $this, 'get_price_format' ), 10, 1 );
+		add_filter( 'woocommerce_price_format', array( $this, 'change_price_format' ), 9999, 2 );
 		// KEEP PRICE ON PRODUCTS DASHBOARD
 		add_filter( 'yay_currency_is_original_product_price', array( $this, 'is_original_product_price' ), 20, 3 );
 
@@ -65,7 +65,7 @@ class Dokan {
 
 		add_filter( 'dokan-seller-dashboard-reports-left-sidebar', array( $this, 'custom_reports_net_sales' ), 10, 1 );
 
-		add_filter( 'yay_currency_report_query_by_currency', array( $this, 'custom_report_query_by_currency' ), 10, 1 );
+		add_filter( 'YayCurrency/Admin/ReportQuery/GetCurrencyCode', array( $this, 'custom_report_query_by_currency' ), 10, 1 );
 
 		/********** FRONTEND AJAX **********/
 
@@ -80,7 +80,10 @@ class Dokan {
 		// REPORT DASHBOARD -- PRO
 		add_action( 'wp_ajax_yay_dokan_custom_reports_statement', array( $this, 'custom_yay_dokan_reports_statement' ) );
 		add_action( 'wp_ajax_nopriv_yay_dokan_custom_reports_statement', array( $this, 'custom_yay_dokan_reports_statement' ) );
-
+		add_action( 'wp_ajax_yay_dokan_custom_approved_withdraw_request', array( $this, 'custom_approved_withdraw_request' ) );
+		add_action( 'wp_ajax_nopriv_yay_dokan_custom_approved_withdraw_request', array( $this, 'custom_approved_withdraw_request' ) );
+		add_action( 'wp_ajax_yay_dokan_custom_cancelled_withdraw_request', array( $this, 'custom_cancelled_withdraw_request' ) );
+		add_action( 'wp_ajax_nopriv_yay_dokan_custom_cancelled_withdraw_request', array( $this, 'custom_cancelled_withdraw_request' ) );
 		/********** BACKEND AJAX **********/
 
 		// DASHBOARD -- LITE & PRO
@@ -96,45 +99,18 @@ class Dokan {
 
 		add_filter( 'dokan_get_overview_data', array( $this, 'custom_get_overview_data' ), 10, 5 ); // Custom Hook
 
+		// Custom WholeSale
+		add_filter( 'dokan_product_wholesale_price_html', array( $this, 'dokan_product_wholesale_price_html' ), 10, 1 ); // Custom WhoSale Price HTML
+
+		add_filter( 'dokan_rest_prepare_withdraw_object', array( $this, 'dokan_rest_prepare_withdraw_object' ), 10, 3 );
+
 	}
 
-	// GET FORMAT PRICE WITH DEFAULT CURRENCY  APPLY FOR FRONTEND
-	public function convert_price_to_default_currency( $price ) {
-		$price           = YayCurrencyHelper::format_price_currency( $price, $this->apply_default_currency );
-		$currency_symbol = YayCurrencyHelper::get_symbol_by_currency_code( $this->default_currency );
-		$format          = YayCurrencyHelper::format_currency_symbol( $this->apply_default_currency );
-		$formatted_price = sprintf( $format, '<span class="woocommerce-Price-currencySymbol">' . $currency_symbol . '</span>', $price );
-		$return          = '<span class="woocommerce-Price-amount amount"><bdi>' . $formatted_price . '</bdi></span>';
-		return $return;
-	}
-
-	// GET FORMAT PRICE WITH DEFAULT CURRENCY  APPLY FOR FRONTEND
-	public function custom_formatted_price_by_currency( $price, $current_currency = false ) {
-		$apply_currency  = $current_currency ? $current_currency : $this->apply_currency;
-		$price           = YayCurrencyHelper::format_price_currency( $price, $apply_currency );
-		$currency_symbol = $apply_currency['symbol'];
-		$format          = YayCurrencyHelper::format_currency_symbol( $apply_currency );
-		$formatted_price = sprintf( $format, '<span class="woocommerce-Price-currencySymbol">' . $currency_symbol . '</span>', $price );
-		$return          = '<span class="woocommerce-Price-amount amount"><bdi>' . $formatted_price . '</bdi></span><span>';
-		return $return;
-	}
-
-	public function custom_format_sale_price_by_currency( $regular_price, $sale_price, $current_currency = false ) {
-		$apply_currency  = $current_currency ? $current_currency : $this->apply_currency;
-		$regular_price   = $this->custom_formatted_price_by_currency( $regular_price, $apply_currency );
-		$sale_price      = $this->custom_formatted_price_by_currency( $sale_price, $apply_currency );
-		$formatted_price = '<del aria-hidden="true">' . $regular_price . '</del> <ins>' . $sale_price . '</ins>';
-		return $formatted_price;
-	}
-
-	// GET FORMAT PRICE WITH DEFAULT CURRENCY  APPLY FOR ADMIN
-	public function get_format_price_by_default_currency( $price, $apply_default_currency = false ) {
-		// GET DEFAULT CURRENCY
-		$formatted_price = wc_price(
-			$price,
-			YayCurrencyHelper::get_apply_currency_format_info( $apply_default_currency )
-		);
-		return $formatted_price;
+	public function allow_detect_caching( $flag ) {
+		if ( self::detect_dokan_pages( 'dashboard' ) ) {
+			$flag = false;
+		}
+		return $flag;
 	}
 
 	public function admin_enqueue_scripts( $page ) {
@@ -144,10 +120,14 @@ class Dokan {
 				'nonce'     => wp_create_nonce( 'yay-currency-dokan-admin-nonce' ),
 				'admin_url' => admin_url(),
 			);
+
 			if ( class_exists( 'Dokan_Pro' ) ) {
 				$data_localize_script['dokan_pro'] = true;
 			}
-			wp_enqueue_script( 'yay-currency-dokan-admin-script', YAY_CURRENCY_PLUGIN_URL . 'src/compatibles/dokan/yay-dokan-admin.js', array(), YAY_CURRENCY_VERSION, true );
+
+			$suffix = defined( 'YAY_CURRENCY_SCRIPT_DEBUG' ) ? '' : '.min';
+
+			wp_enqueue_script( 'yay-currency-dokan-admin-script', YAY_CURRENCY_PLUGIN_URL . 'src/compatibles/dokan/yay-dokan-admin' . $suffix . '.js', array(), YAY_CURRENCY_VERSION, true );
 			wp_localize_script(
 				'yay-currency-dokan-admin-script',
 				'yay_dokan_admin_data',
@@ -156,14 +136,20 @@ class Dokan {
 		}
 	}
 
+	public function add_localize_args( $localize_args ) {
+		if ( ! isset( $localize_args['shortCode'] ) ) {
+			$localize_args['shortCode'] = do_shortcode( '[yaycurrency-menu-item-switcher]' );
+		}
+		return $localize_args;
+	}
+
 	public function frontend_enqueue_scripts() {
-		global $wp;
 		$withdraw_limit             = function_exists( 'dokan_get_option' ) ? dokan_get_option( 'withdraw_limit', 'dokan_withdraw', 0 ) : 0;
 		$withdraw_limit_convert     = YayCurrencyHelper::calculate_price_by_currency( $withdraw_limit, false, $this->apply_currency );
-		$withdraw_limit_by_currency = $this->custom_formatted_price_by_currency( $withdraw_limit_convert, $this->apply_currency );
+		$withdraw_limit_by_currency = YayCurrencyHelper::formatted_price_by_currency( $withdraw_limit_convert, $this->apply_currency );
 		$show_approximately_price   = apply_filters( 'yay_dokan_approximately_price', true );
 		if ( $withdraw_limit && $this->default_currency !== $this->apply_currency['currency'] && $show_approximately_price ) {
-			$withdraw_limit_by_currency = $this->convert_price_to_default_currency( $withdraw_limit ) . YayCurrencyHelper::converted_approximately_html( $withdraw_limit_by_currency );
+			$withdraw_limit_by_currency = YayCurrencyHelper::formatted_price_by_currency( $withdraw_limit, $this->apply_default_currency ) . YayCurrencyHelper::converted_approximately_html( $withdraw_limit_by_currency );
 		}
 
 		$data_localize_script = array(
@@ -171,11 +157,19 @@ class Dokan {
 			'nonce'                   => wp_create_nonce( 'yay-currency-dokan-nonce' ),
 			'seller_id'               => is_user_logged_in() ? get_current_user_id() : 0,
 			'withdraw_limit_currency' => $withdraw_limit_by_currency,
-			'withdraw_page'           => isset( $wp->query_vars['withdraw'] ) ? 'yes' : 'no',
 		);
+
+		if ( self::detect_dokan_pages( 'withdraw-requests' ) ) {
+			$data_localize_script['withdraw_approved_requests_page']  = isset( $_GET['type'] ) && 'approved' === $_GET['type'] ? 'yes' : 'no';
+			$data_localize_script['withdraw_cancelled_requests_page'] = isset( $_GET['type'] ) && 'cancelled' === $_GET['type'] ? 'yes' : 'no';
+		}
 
 		if ( $show_approximately_price ) {
 			$data_localize_script['approximately_price'] = 'yes';
+		}
+
+		if ( self::detect_dokan_pages( 'dashboard' ) ) {
+			$data_localize_script['dashboard_page'] = 'yes';
 		}
 
 		if ( $this->default_currency !== $this->apply_currency['currency'] ) {
@@ -186,7 +180,7 @@ class Dokan {
 
 		if ( class_exists( 'Dokan_Pro' ) ) {
 			$data_localize_script['dokan_pro'] = true;
-			if ( isset( $wp->query_vars['reports'] ) && isset( $_REQUEST['chart'] ) && 'sales_statement' === $_REQUEST['chart'] ) {
+			if ( self::detect_dokan_pages( 'reports' ) && isset( $_REQUEST['chart'] ) && 'sales_statement' === $_REQUEST['chart'] ) {
 				$start_date = dokan_current_datetime()->modify( 'first day of this month' )->format( 'Y-m-d' );
 				$end_date   = dokan_current_datetime()->format( 'Y-m-d' );
 
@@ -208,23 +202,31 @@ class Dokan {
 			}
 		}
 
-		if ( isset( $wp->query_vars['withdraw'] ) ) {
+		if ( self::detect_dokan_pages( 'withdraw' ) ) {
 			$last_withdraw = dokan()->withdraw->get_withdraw_requests( dokan_get_current_user_id(), 1, 1 );
-			if ( ! empty( $last_withdraw ) ) {
-				$amount                         = isset( $last_withdraw[0]->amount ) ? $last_withdraw[0]->amount : $last_withdraw[0]->get_data()['amount'];
-				$last_payment_withdraw_currency = $this->convert_price_to_default_currency( $amount );
+			$last_withdraw = isset( $last_withdraw[0] ) ? $last_withdraw[0] : false;
+			if ( $last_withdraw ) {
+				$amount                    = $last_withdraw->get_amount();
+				$withdraw_date             = $last_withdraw->get_date();
+				$rate_fee_by_last_withdraw = self::get_rate_fee_by_dokan_vendor_balance_by_withdraw( dokan_get_current_user_id(), floatval( $amount ) );
+
+				if ( $rate_fee_by_last_withdraw ) {
+					$amount = floatval( $amount / $rate_fee_by_last_withdraw );
+					$amount = apply_filters( 'YayCurrency/Dokan/Withdraw/Amount', $amount, $withdraw_date, dokan_get_current_user_id() );
+				}
+
+				$last_payment_withdraw_currency = YayCurrencyHelper::formatted_price_by_currency( $amount, $this->apply_default_currency );
+
 				if ( $this->default_currency !== $this->apply_currency['currency'] ) {
 					$last_payment_by_currency = YayCurrencyHelper::calculate_price_by_currency( $amount, false, $this->apply_currency );
-					$last_payment_by_currency = $this->custom_formatted_price_by_currency( $last_payment_by_currency, $this->apply_currency );
+					$last_payment_by_currency = YayCurrencyHelper::formatted_price_by_currency( $last_payment_by_currency, $this->apply_currency );
 					if ( $show_approximately_price ) {
 						$last_payment_withdraw_currency = $last_payment_withdraw_currency . YayCurrencyHelper::converted_approximately_html( $last_payment_by_currency );
 					}
 				}
 
-				$date                      = isset( $last_withdraw[0]->date ) ? $last_withdraw[0]->date : $last_withdraw[0]->get_data()['date'];
-				$method                    = isset( $last_withdraw[0]->method ) ? $last_withdraw[0]->method : $last_withdraw[0]->get_data()['method'];
-				$last_withdraw_date        = '<strong><em>' . dokan_format_date( $date ) . '</em></strong>';
-				$last_withdraw_method_used = '<strong>' . dokan_withdraw_get_method_title( $method ) . '</strong>';
+				$last_withdraw_date        = '<strong><em>' . dokan_format_date( $withdraw_date ) . '</em></strong>';
+				$last_withdraw_method_used = '<strong>' . dokan_withdraw_get_method_title( $last_withdraw->get_method() ) . '</strong>';
 
 				$payment_details = '<strong>' . $last_payment_withdraw_currency . '</strong> on ' . $last_withdraw_date . ' to ' . $last_withdraw_method_used;
 
@@ -232,12 +234,14 @@ class Dokan {
 			}
 		}
 
-		if ( isset( $wp->query_vars['coupons'] ) && $this->default_currency !== $this->apply_currency['currency'] ) {
+		if ( self::detect_dokan_pages( 'coupons' ) && $this->default_currency !== $this->apply_currency['currency'] ) {
 			$data_localize_script['yay_dokan_coupon_area']   = true;
 			$data_localize_script['yay_dokan_coupon_amount'] = '<strong class="yay-dokan-coupon-amount-wrapper"></strong>';
 		}
 
-		wp_enqueue_script( 'yay-currency-dokan-script', YAY_CURRENCY_PLUGIN_URL . 'src/compatibles/dokan/yay-dokan.js', array(), YAY_CURRENCY_VERSION, true );
+		$suffix = defined( 'YAY_CURRENCY_SCRIPT_DEBUG' ) ? '' : '.min';
+
+		wp_enqueue_script( 'yay-currency-dokan-script', YAY_CURRENCY_PLUGIN_URL . 'src/compatibles/dokan/yay-dokan' . $suffix . '.js', array(), YAY_CURRENCY_VERSION, true );
 		wp_localize_script(
 			'yay-currency-dokan-script',
 			'yay_dokan_data',
@@ -253,130 +257,147 @@ class Dokan {
 	}
 
 	public function get_order_currency_by_dokan_order_details() {
-		global $wp;
 		$order_currency = false;
-		if ( isset( $wp->query_vars['orders'] ) && isset( $_REQUEST['order_id'] ) ) {
-			$order_id       = sanitize_key( $_REQUEST['order_id'] );
-			$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $order_id, $this->converted_currency );
+		if ( self::detect_dokan_pages( 'orders' ) && isset( $_REQUEST['order_id'] ) ) {
+			$order_id = sanitize_key( $_REQUEST['order_id'] );
+			$order    = wc_get_order( $order_id );
+			if ( ! $order ) {
+				return $this->apply_default_currency;
+			}
+			$order_currency = YayCurrencyHelper::get_currency_by_currency_code( $order->get_currency(), $this->converted_currency );
 		}
 		return $order_currency;
 	}
 
-	public function is_dokan_special_pages( $wp ) {
-		$pages = array( 'reports' );
-
-		$flag = false;
-		foreach ( $pages as $page ) {
-			if ( isset( $wp->query_vars[ $page ] ) ) {
-				$flag = true;
-				break;
-			}
+	protected function detect_dokan_pages( $type = 'dashboard' ) {
+		$pagename = isset( $GLOBALS['wp']->query_vars['pagename'] ) ? $GLOBALS['wp']->query_vars['pagename'] : false;
+		if ( ! $pagename ) {
+			return false;
 		}
-
+		$flag = false;
+		switch ( $type ) {
+			case 'dashboard':
+				$dashboard_page_id = dokan_get_option( 'dashboard', 'dokan_pages' );
+				$flag              = $pagename && ( in_array( $pagename, array( 'dashboard', 'vendor-dashboard' ) ) || is_page( $dashboard_page_id ) );
+				break;
+			default:
+				$flag = self::detect_dokan_pages( 'dashboard' ) && isset( $GLOBALS['wp']->query_vars[ $type ] );
+				break;
+		}
 		return $flag;
-
 	}
 
 	public function custom_currency_symbol( $symbol, $currency, $apply_currency ) {
-		global $wp;
 
-		if ( class_exists( 'Dokan_Pro' ) && doing_action( 'dokan_dashboard_right_widgets' ) ) {
+		if ( ! self::detect_dokan_pages( 'dashboard' ) || ( class_exists( 'Dokan_Pro' ) && doing_action( 'dokan_dashboard_right_widgets' ) ) ) {
 			return $symbol;
 		}
 
 		$order_currency = $this->get_order_currency_by_dokan_order_details();
 
-		if ( $order_currency && isset( $order_currency['currency'] ) ) {
-			$symbol = YayCurrencyHelper::get_symbol_by_currency_code( $order_currency['currency'] );
-			return $symbol;
+		if ( $order_currency && isset( $order_currency['symbol'] ) ) {
+			return $order_currency['symbol'];
 		}
 
-		if ( isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
-
-			if ( ! $this->is_dokan_special_pages( $wp ) ) {
-				$symbol = YayCurrencyHelper::get_symbol_by_currency_code( $this->default_currency );
-			}
+		if ( ! self::detect_dokan_pages( 'reports' ) ) {
+			$symbol = $this->apply_default_currency['symbol'];
 		}
 
 		return $symbol;
 	}
 
-	public function custom_thousand_separator( $thousand_separator, $apply_currency ) {
-		global $wp;
+	public function get_price_format( $args ) {
 
-		if ( isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
-			if ( ! $this->is_dokan_special_pages( $wp ) ) {
-				$thousand_separator = isset( $this->apply_default_currency['thousandSeparator'] ) ? $this->apply_default_currency['thousandSeparator'] : $thousand_separator;
-			}
+		if ( ! self::detect_dokan_pages( 'dashboard' ) ) {
+			return $args;
 		}
 
-		return $thousand_separator;
-
-	}
-
-	public function custom_decimal_separator( $decimal_separator, $apply_currency ) {
-		global $wp;
-
-		if ( isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
-			if ( ! $this->is_dokan_special_pages( $wp ) ) {
-				$decimal_separator = isset( $this->apply_default_currency['decimalSeparator'] ) ? $this->apply_default_currency['decimalSeparator'] : $decimal_separator;
-			}
-		}
-
-		return $decimal_separator;
-
-	}
-
-	public function custom_number_decimal( $number_decimal, $apply_currency ) {
-		global $wp;
-
-		if ( isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
-			if ( ! $this->is_dokan_special_pages( $wp ) ) {
-				$number_decimal = isset( $this->apply_default_currency['numberDecimal'] ) ? $this->apply_default_currency['numberDecimal'] : $number_decimal;
-			}
-		}
-
-		return $number_decimal;
-
-	}
-
-	public function custom_price_format( $format, $apply_currency ) {
-		global $wp;
-
+		$apply_currency = array();
 		$order_currency = $this->get_order_currency_by_dokan_order_details();
+
 		if ( $order_currency ) {
-			$format = YayCurrencyHelper::format_currency_symbol( $order_currency );
+			$apply_currency = $order_currency;
+		} elseif ( ! self::detect_dokan_pages( 'reports' ) ) {
+			$apply_currency = $this->apply_default_currency;
+		}
+
+		if ( empty( $args ) || ! $apply_currency ) {
+			return $args;
+		}
+
+		$args['currency']           = $apply_currency['currency'];
+		$args['thousand_separator'] = $apply_currency['thousandSeparator'];
+		$args['decimal_separator']  = $apply_currency['decimalSeparator'];
+		$args['decimals']           = $apply_currency['numberDecimal'];
+		$args['price_format']       = YayCurrencyHelper::format_currency_symbol( $apply_currency );
+
+		return $args;
+	}
+
+	public function change_price_format( $format, $currency_position ) {
+
+		if ( ! self::detect_dokan_pages( 'dashboard' ) ) {
 			return $format;
 		}
 
-		if ( isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
-			if ( ! $this->is_dokan_special_pages( $wp ) ) {
-				$format = YayCurrencyHelper::format_currency_symbol( $this->apply_default_currency );
-			}
+		if ( self::detect_dokan_pages( 'withdraw' ) || self::detect_dokan_pages( 'withdraw-requests' ) ) {
+			$apply_currency = $this->apply_default_currency;
+			$format         = YayCurrencyHelper::format_currency_symbol( $apply_currency );
 		}
 
 		return $format;
 	}
 
 	public function is_original_product_price( $flag, $price, $product ) {
-		global $wp;
-		if ( isset( $wp->query_vars['products'] ) ) {
+		if ( self::detect_dokan_pages( 'products' ) ) {
 			$flag = true;
 		}
-
 		return $flag;
 	}
 
-	public function calculate_price_apply_currency_from_order_currency( $price, $order_currency, $only_get_price_default = false ) {
-
-		if ( $this->default_currency !== $order_currency['currency'] ) {
-			$rate_fee = YayCurrencyHelper::get_rate_fee( $order_currency );
-			$price    = $price / $rate_fee;
+	protected function convert_value_from_order( $value, $order_id, $keep_default = false ) {
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return $value;
 		}
-
-		return $only_get_price_default ? $price : YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
+		$order_rate_fee = Helper::get_yay_currency_order_rate( $order_id, $order );
+		$original_value = floatval( $value / $order_rate_fee );
+		return $keep_default ? $original_value : YayCurrencyHelper::calculate_price_by_currency( $original_value, false, $this->apply_currency );
 	}
 
+	// GET
+	public function get_dokan_vendor_balance_data( $seller_id, $amount ) {
+		global $wpdb;
+		$dokan_vendor_balance = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}dokan_vendor_balance WHERE vendor_id = %d AND trn_type ='dokan_withdraw' AND credit =%f AND status='approved'",
+				$seller_id,
+				$amount
+			)
+		);
+		if ( $dokan_vendor_balance ) {
+			$orders = self::get_dokan_orders_by_seller_id( $seller_id );
+			return $orders;
+		}
+		return false;
+	}
+	public function get_rate_fee_by_dokan_vendor_balance_by_withdraw( $seller_id, $amount ) {
+		if ( ! apply_filters( 'YayCurrency/Dokan/RevertToDefault', false ) ) {
+			return 1;
+		}
+		global $wpdb;
+		$dokan_vendor_balance = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}dokan_vendor_balance WHERE vendor_id = %d AND trn_type ='dokan_withdraw' AND credit =%f AND status='approved'",
+				$seller_id,
+				$amount
+			)
+		);
+		$trn_id               = isset( $dokan_vendor_balance->trn_id ) ? $dokan_vendor_balance->trn_id : false;
+		$order_id             = self::get_order_id_by_trn_id( $trn_id );
+		$order                = wc_get_order( $order_id );
+		return $order ? Helper::get_yay_currency_order_rate( $order_id, $order ) : 1;
+	}
 	// GET ALL ORDERS BY SELLER ID
 	public function get_dokan_orders_by_seller_id( $seller_id = 0 ) {
 		global $wpdb;
@@ -401,16 +422,35 @@ class Dokan {
 	public function get_earning_by_seller_id( $seller_id, $balance_date, $only_get_price_default = false ) {
 		$earning  = 0;
 		$balances = $this->get_balance_by_seller_id( $seller_id, $balance_date, 'earning' );
+
 		foreach ( $balances as $balance ) {
-			$balance_debit = $this->convert_value_by_order_id( $balance->debit, $balance->trn_id, $only_get_price_default );
-			if ( -1 === $balance_debit ) {
+			$order = wc_get_order( $balance->trn_id );
+			if ( ! $order ) {
 				continue;
 			}
+			$balance_debit = self::convert_value_from_order( $balance->debit, $balance->trn_id, $only_get_price_default );
+			$balance_debit = apply_filters( 'YayCurrency/Dokan/Seller/Balance/Debit', $balance_debit, $order, $seller_id, $only_get_price_default );
+
 			$earning += $balance_debit;
 		}
+		$earning = (float) NumberUtil::round( $earning, wc_get_rounding_precision() );
 		return $earning;
 	}
 	// GET CREDIT BY SELLER_ID : WITHDRAW AUTO IS DEFAULT CURRENCY
+	protected function get_order_id_by_trn_id( $trn_id ) {
+		global $wpdb;
+		$result   = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *
+            FROM {$wpdb->prefix}dokan_orders
+            WHERE id = %d",
+				$trn_id
+			)
+		);
+		$order_id = $result && isset( $result->order_id ) ? $result->order_id : false;
+		return $order_id;
+	}
+
 	public function get_withdraw_by_seller_id( $seller_id, $balance_date ) {
 		global $wpdb;
 		$withdraw = 0;
@@ -424,17 +464,28 @@ class Dokan {
 				0
 			)
 		);
+
 		foreach ( $results as $value ) {
+
+			$order_id = self::get_order_id_by_trn_id( $value->trn_id );
+			$order    = wc_get_order( $order_id );
+			$rate_fee = 1;
+
+			if ( $order ) {
+				$rate_fee = Helper::get_yay_currency_order_rate( $order_id, $order );
+				$rate_fee = apply_filters( 'YayCurrency/Dokan/Withdraw/ExchangeRate', $rate_fee, $order, $value->balance_date, $seller_id );
+			}
+
 			if ( 'dokan_refund' === $value->trn_type ) {
-				$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $value->trn_id, $this->converted_currency );
-				if ( ! $order_currency ) {
-					continue;
-				}
-				$withdraw -= (float) $value->credit / YayCurrencyHelper::get_rate_fee( $order_currency );
+				$withdraw -= (float) $value->credit / $rate_fee;
 			} else {
-				$withdraw += $value->credit;
+				$withdraw += (float) $value->credit / $rate_fee;
 			}
 		}
+
+		$withdraw = apply_filters( 'YayCurrency/Dokan/Seller/Withdraw', $withdraw, $results, $seller_id );
+		$withdraw = (float) NumberUtil::round( $withdraw, wc_get_rounding_precision() );
+
 		return $withdraw;
 
 	}
@@ -465,36 +516,23 @@ class Dokan {
 		return $balances;
 	}
 
-	public function convert_value_by_order_id( $value = 0, $order_id = 0, $only_get_price_default = false ) {
-		$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $order_id, $this->converted_currency );
-		if ( ! $order_currency ) {
-			return -1;
-		}
-		return $this->calculate_price_apply_currency_from_order_currency( $value, $order_currency, $only_get_price_default );
-	}
-
-	public function get_debit_balance( $seller_id, $balance_date ) {
+	protected function get_debit_balance( $seller_id, $balance_date ) {
 		$debit    = 0;
 		$balances = $this->get_balance_by_seller_id( $seller_id, $balance_date, 'debit' );
 		foreach ( $balances as $balance ) {
-			$balance_debit = $this->convert_value_by_order_id( $balance->debit, $balance->trn_id, true );
-			if ( -1 === $balance_debit ) {
-				continue;
-			}
-			$debit += $balance_debit;
+			$balance_debit = self::convert_value_from_order( $balance->debit, $balance->trn_id, true );
+			$debit        += $balance_debit;
 		}
 		return $debit;
 	}
 
-	public function get_credit_balance( $seller_id, $balance_date ) {
+	protected function get_credit_balance( $seller_id, $balance_date ) {
 		$credit   = 0;
 		$balances = $this->get_balance_by_seller_id( $seller_id, $balance_date, 'credit' );
 		foreach ( $balances as $balance ) {
-			$balance_credit = $this->convert_value_by_order_id( $balance->credit, $balance->trn_id, true );
-			if ( -1 === $balance_credit ) {
-				continue;
-			}
-			$credit += $balance_credit;
+			$order_id       = self::get_order_id_by_trn_id( $balance->trn_id );
+			$balance_credit = self::convert_value_from_order( $balance->credit, $order_id, true );
+			$credit        += $balance_credit;
 		}
 		return $credit;
 	}
@@ -504,13 +542,7 @@ class Dokan {
 		$dokan_orders = $this->get_dokan_orders_by_seller_id( $seller_id );
 		$net_sales    = 0;
 		foreach ( $dokan_orders as $dokan_order ) {
-			if ( ! isset( $dokan_order->net_amount ) || ! isset( $dokan_order->order_id ) ) {
-				return;
-			}
-			$net_amount = $this->convert_value_by_order_id( $dokan_order->net_amount, $dokan_order->order_id, true );
-			if ( -1 === intval( $net_amount ) || empty( $net_amount ) || ! $net_amount ) {
-				continue;
-			}
+			$net_amount = self::convert_value_from_order( $dokan_order->net_amount, $dokan_order->order_id, true );
 			$net_sales += $net_amount;
 		}
 
@@ -520,27 +552,30 @@ class Dokan {
 	// Custom Earning by apply currency ---(Dashboard)
 	public function custom_dokan_get_seller_earnings( $earning, $seller_id ) {
 		$on_date        = dokan_current_datetime()->format( 'Y-m-d H:i:s' );
-		$debit_balance  = $this->get_debit_balance( $seller_id, $on_date );
-		$credit_balance = $this->get_credit_balance( $seller_id, $on_date );
+		$debit_balance  = self::get_debit_balance( $seller_id, $on_date );
+		$credit_balance = self::get_credit_balance( $seller_id, $on_date );
+		$earning        = floatval( $debit_balance - $credit_balance );
+		$earning        = $earning < 0 ? 0 : $earning;
 
-		$earning = floatval( $debit_balance - $credit_balance );
-
-		return $this->custom_formatted_price_by_currency( $earning, $this->apply_default_currency );
+		return YayCurrencyHelper::formatted_price_by_currency( $earning, $this->apply_default_currency );
 
 	}
 
 	public function custom_dokan_get_formatted_seller_balance( $earning, $seller_id ) {
-		$on_date          = dokan_current_datetime()->format( 'Y-m-d H:i:s' );
-		$withdraw         = $this->get_withdraw_by_seller_id( $seller_id, $on_date );
-		$earning          = $this->get_earning_by_seller_id( $seller_id, $on_date, true );
+		$on_date = dokan_current_datetime()->format( 'Y-m-d H:i:s' );
+
+		$withdraw = $this->get_withdraw_by_seller_id( $seller_id, $on_date );
+		$earning  = $this->get_earning_by_seller_id( $seller_id, $on_date, true );
+
 		$balance          = $earning - $withdraw;
+		$balance          = $balance < 0 ? 0 : $balance;
 		$balance_convert  = YayCurrencyHelper::calculate_price_by_currency( $balance, false, $this->apply_currency );
-		$balance_currency = $this->custom_formatted_price_by_currency( $balance_convert, $this->apply_currency );
+		$balance_currency = YayCurrencyHelper::formatted_price_by_currency( $balance_convert, $this->apply_currency );
 
 		if ( $this->default_currency !== $this->apply_currency['currency'] ) {
-			$balance_currency = $this->convert_price_to_default_currency( $balance );
+			$balance_currency = YayCurrencyHelper::formatted_price_by_currency( $balance, $this->apply_default_currency );
 			if ( apply_filters( 'yay_dokan_approximately_price', true ) ) {
-				$balance_convert_currency = $this->custom_formatted_price_by_currency( $balance_convert, $this->apply_currency );
+				$balance_convert_currency = YayCurrencyHelper::formatted_price_by_currency( $balance_convert, $this->apply_currency );
 				$balance_currency        .= YayCurrencyHelper::converted_approximately_html( $balance_convert_currency );
 			}
 		}
@@ -549,8 +584,7 @@ class Dokan {
 	}
 
 	public function custom_dokan_get_seller_balance( $earning, $seller_id ) {
-		global $wp;
-		if ( isset( $wp->query_vars['reports'] ) ) {
+		if ( self::detect_dokan_pages( 'reports' ) ) {
 			$start_date = dokan_current_datetime()->modify( 'first day of this month' )->format( 'Y-m-d' );
 			if ( isset( $_GET['dokan_report_filter'] ) && isset( $_GET['dokan_report_filter_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['dokan_report_filter_nonce'] ) ), 'dokan_report_filter' ) && isset( $_GET['start_date_alt'] ) && isset( $_GET['end_date_alt'] ) ) {
 				$start_date = dokan_current_datetime()
@@ -563,29 +597,23 @@ class Dokan {
 			$on_date = $on_date->format( 'Y-m-d H:i:s' );
 		}
 
-		$earning  = $this->get_earning_by_seller_id( $seller_id, $on_date, true );
-		$withdraw = $this->get_withdraw_by_seller_id( $seller_id, $on_date, true );
-
+		$earning        = $this->get_earning_by_seller_id( $seller_id, $on_date, true );
+		$withdraw       = $this->get_withdraw_by_seller_id( $seller_id, $on_date, true );
 		$seller_balance = $earning - $withdraw;
-		return $seller_balance;
+		return $seller_balance < 0 ? 0 : $seller_balance;
 	}
 
 	public function custom_dokan_reports_get_order_report_query( $query ) {
-		global $wp;
-		if ( ! isset( $wp->query_vars['reports'] ) && isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
+
+		if ( ! self::detect_dokan_pages( 'reports' ) ) {
 			$query['select'] = 'SELECT meta__order_total.*, post_date';
 			if ( isset( $query['group_by'] ) ) {
 				unset( $query['group_by'] );
 			}
-		}
-
-		if ( isset( $wp->query_vars['reports'] ) ) {
-
-			if ( 'SELECT SUM( meta__order_total.meta_value) as total_sales,COUNT(DISTINCT posts.ID) as total_orders, posts.post_date as post_date' === $query['select'] ) {
+		} elseif ( 'SELECT SUM( meta__order_total.meta_value) as total_sales,COUNT(DISTINCT posts.ID) as total_orders, posts.post_date as post_date' === $query['select'] ) {
 				$query['select'] = 'SELECT meta__order_total.*, post_date';
-				if ( isset( $query['group_by'] ) ) {
-					unset( $query['group_by'] );
-				}
+			if ( isset( $query['group_by'] ) ) {
+				unset( $query['group_by'] );
 			}
 		}
 
@@ -600,15 +628,9 @@ class Dokan {
 
 	public function custom_report_chart( $rows, $data ) {
 		$query = array();
-		foreach ( $rows as $key => $value ) {
-
+		foreach ( $rows as $value ) {
 			$date        = gmdate( 'Y-m-d', strtotime( $value->post_date ) );
-			$total_sales = $this->convert_value_by_order_id( (float) $value->meta_value, $value->post_id, true );
-
-			if ( -1 === $total_sales ) {
-				continue;
-			}
-
+			$total_sales = self::convert_value_from_order( (float) $value->meta_value, $value->post_id, true );
 			if ( ! isset( $query[ $date ] ) ) {
 
 				$query[ $date ] = (object) array(
@@ -633,17 +655,9 @@ class Dokan {
 		$total_orders   = 0;
 		if ( $rows ) {
 			foreach ( $rows as $key => $value ) {
-
-				$order_total_sales    = $this->convert_value_by_order_id( (float) $value->sales, $value->order_id, true );
-				$order_total_shipping = $this->convert_value_by_order_id( (float) $value->shipping, $value->order_id, true );
-				if ( -1 === $order_total_sales && -1 === $order_total_shipping ) {
-					continue;
-				}
-
-				$total_sales    += $order_total_sales;
-				$total_shipping += $order_total_shipping;
+				$total_sales    += self::convert_value_from_order( (float) $value->sales, $value->order_id, true );
+				$total_shipping += self::convert_value_from_order( (float) $value->shipping, $value->order_id, true );
 				++$total_orders;
-
 			}
 		}
 
@@ -678,7 +692,7 @@ class Dokan {
 			if ( ! $order_currency ) {
 				continue;
 			}
-			$total_refund += $this->calculate_price_apply_currency_from_order_currency( (float) $value->refund_amount, $order_currency, true );
+			$total_refund += self::convert_value_from_order( (float) $value->refund_amount, $value->order_id, true );
 		}
 		return $total_refund;
 	}
@@ -693,7 +707,7 @@ class Dokan {
 				if ( ! $order_currency ) {
 					continue;
 				}
-				$total_coupons += $this->calculate_price_apply_currency_from_order_currency( (float) $value->meta_value, $order_currency, true );
+				$total_coupons += self::convert_value_from_order( (float) $value->meta_value, $order_id, true );
 			}
 		}
 		return $total_coupons;
@@ -744,17 +758,11 @@ class Dokan {
 	}
 
 	public function custom_dokan_reports_get_order_report_data( $rows, $data ) {
-		global $wp;
-		if ( ! isset( $wp->query_vars['reports'] ) && isset( $wp->query_vars['pagename'] ) && 'dashboard' === $wp->query_vars['pagename'] ) {
+		if ( ! self::detect_dokan_pages( 'reports' ) ) {
 			return $this->custom_report_chart( $rows, $data );
-		}
-
-		if ( isset( $wp->query_vars['reports'] ) ) {
-
-			if ( isset( $data['_order_total'] ) && isset( $data['ID'] ) ) {
-				if ( isset( $data['post_date'] ) ) {
-					return $this->custom_report_chart( $rows, $data );
-				}
+		} elseif ( isset( $data['_order_total'] ) && isset( $data['ID'] ) ) {
+			if ( isset( $data['post_date'] ) ) {
+				return $this->custom_report_chart( $rows, $data );
 			}
 		}
 
@@ -762,9 +770,7 @@ class Dokan {
 	}
 
 	public function custom_reports_top_earners_order_items( $order_items, $start_date, $end_date ) {
-		global $wp;
-
-		if ( isset( $wp->query_vars['reports'] ) ) {
+		if ( self::detect_dokan_pages( 'reports' ) ) {
 			global $wpdb;
 			$seller_id             = dokan_get_current_user_id();
 			$withdraw_order_status = dokan_get_option( 'withdraw_order_status', 'dokan_withdraw', array( 'wc-completed' ) );
@@ -795,17 +801,14 @@ class Dokan {
 			$args_order_items      = array();
 			foreach ( $order_items as $item ) {
 
-				if ( ! in_array( $item->order_status, array_values( $withdraw_order_status ) ) ) {
+				$order_id = ! isset( $item->order_id ) ? $item->order_id : false;
+
+				if ( ! $order_id || ! in_array( $item->order_status, array_values( $withdraw_order_status ) ) ) {
 					continue;
 				}
 
-				$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $item->order_id, $this->converted_currency );
-				if ( ! $order_currency ) {
-					continue;
-				}
-
-				$line_total    = $this->calculate_price_apply_currency_from_order_currency( (float) $item->line_total, $order_currency );
-				$total_earning = $this->calculate_price_apply_currency_from_order_currency( (float) $item->total_earning, $order_currency );
+				$line_total    = self::convert_value_from_order( (float) $item->line_total, $order_id );
+				$total_earning = self::convert_value_from_order( (float) $item->total_earning, $order_id );
 				if ( ! isset( $args_order_items[ $item->product_id ] ) ) {
 						$args_order_items[ $item->product_id ] = (object) array(
 							'product_id'    => $item->product_id,
@@ -920,12 +923,9 @@ class Dokan {
 		$data = array();
 		foreach ( $all_data_by_month as $value ) {
 			$date        = gmdate( 'Y-m-d', strtotime( $value->order_date ) );
-			$order_total = $this->convert_value_by_order_id( (float) $value->order_total, $value->order_id, true );
-			$net_amount  = $this->convert_value_by_order_id( (float) $value->net_amount, $value->order_id, true );
-			if ( -1 === $order_total && -1 === $net_amount ) {
-				continue;
-			}
-			$earning = $order_total - $net_amount;
+			$order_total = self::convert_value_from_order( (float) $value->order_total, $value->order_id, true );
+			$net_amount  = self::convert_value_from_order( (float) $value->net_amount, $value->order_id, true );
+			$earning     = $order_total - $net_amount;
 			if ( ! isset( $data[ $date ] ) ) {
 				$data[ $date ] = (object) array(
 					'earning'      => $earning,
@@ -996,10 +996,10 @@ class Dokan {
 			}
 		}
 
-		$this_month_order_total_html   = $this->get_format_price_by_default_currency( $this_month_order_total, $this->apply_default_currency );
-		$last_month_order_total_html   = $this->get_format_price_by_default_currency( $last_month_order_total, $this->apply_default_currency );
-		$this_month_earning_total_html = $this->get_format_price_by_default_currency( $this_month_earning_total, $this->apply_default_currency );
-		$last_month_earning_total_html = $this->get_format_price_by_default_currency( $last_month_earning_total, $this->apply_default_currency );
+		$this_month_order_total_html   = YayCurrencyHelper::formatted_price_by_currency( $this_month_order_total, $this->apply_default_currency );
+		$last_month_order_total_html   = YayCurrencyHelper::formatted_price_by_currency( $last_month_order_total, $this->apply_default_currency );
+		$this_month_earning_total_html = YayCurrencyHelper::formatted_price_by_currency( $this_month_earning_total, $this->apply_default_currency );
+		$last_month_earning_total_html = YayCurrencyHelper::formatted_price_by_currency( $last_month_earning_total, $this->apply_default_currency );
 
 		if ( $from && $to ) {
 			$date             = dokan_prepare_date_query( $from, $to );
@@ -1035,9 +1035,9 @@ class Dokan {
 				}
 			}
 
-			$this_period_order_total_html   = $this->get_format_price_by_default_currency( $this_period_order_total, $this->apply_default_currency );
-			$this_period_total_orders_html  = $this->get_format_price_by_default_currency( $this_period_total_orders, $this->apply_default_currency );
-			$this_period_earning_total_html = $this->get_format_price_by_default_currency( $this_period_earning_total, $this->apply_default_currency );
+			$this_period_order_total_html   = YayCurrencyHelper::formatted_price_by_currency( $this_period_order_total, $this->apply_default_currency );
+			$this_period_total_orders_html  = YayCurrencyHelper::formatted_price_by_currency( $this_period_total_orders, $this->apply_default_currency );
+			$this_period_earning_total_html = YayCurrencyHelper::formatted_price_by_currency( $this_period_earning_total, $this->apply_default_currency );
 
 			$sale_percentage    = dokan_get_percentage_of( $this_period_order_total, $last_period_order_total );
 			$earning_percentage = dokan_get_percentage_of( $this_period_earning_total, $last_period_earning_total );
@@ -1113,7 +1113,6 @@ class Dokan {
 	}
 
 	public function custom_earning_from_order() {
-
 		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
 
 		if ( ! $nonce || ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-dokan-nonce' ) ) {
@@ -1125,188 +1124,37 @@ class Dokan {
 		if ( ! $order_id ) {
 			wp_send_json_error( array( 'message' => __( 'Order doesn\'t exist', 'yay-currency' ) ) );
 		}
-
-		$seller_id      = isset( $_POST['seller_id'] ) ? intval( sanitize_text_field( $_POST['seller_id'] ) ) : false;
-		$result         = $this->get_order_info_from_order_table( $order_id, $seller_id );
+		$order          = wc_get_order( $order_id );
 		$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $order_id, $this->converted_currency );
 
-		if ( ! $result || ! $order_currency ) {
+		if ( ! $order_currency ) {
 			wp_send_json_error( array( 'message' => __( 'Order doesn\'t exist', 'yay-currency' ) ) );
 		}
 
-		$order_total = $result->order_total;
-		if ( 'wc-refunded' === $result->order_status ) {
-			$order_total = $this->custom_format_sale_price_by_currency( $order_total, 0, $order_currency );
+		$order_total = $order->get_total();
+		if ( 'refunded' === $order->get_status() ) {
+			$order_total = YayCurrencyHelper::formatted_sale_price_by_currency( $order_total, 0, $order_currency );
 		} else {
-			$order_total = $this->custom_formatted_price_by_currency( $order_total, $order_currency );
+			$order_total = YayCurrencyHelper::formatted_price_by_currency( $order_total, $order_currency );
+		}
+
+		if ( function_exists( 'dokan' ) && method_exists( dokan()->commission, 'get_earning_by_order' ) ) {
+			$earning = dokan()->commission->get_earning_by_order( $order );
+		} else {
+			$seller_id = isset( $_POST['seller_id'] ) ? intval( sanitize_text_field( $_POST['seller_id'] ) ) : false;
+			$result    = $this->get_order_info_from_order_table( $order_id, $seller_id );
+			$earning   = isset( $result ) ? $result->net_amount : 0;
 		}
 
 		wp_send_json_success(
 			array(
-				'earning'     => $this->custom_formatted_price_by_currency( $result->net_amount, $order_currency ),
+				'earning'     => YayCurrencyHelper::formatted_price_by_currency( $earning, $order_currency ),
 				'order_total' => $order_total,
 			)
 		);
-
-		/*
-		$earning     = $this->convert_value_by_order_id( $result->net_amount, $order_id );
-		$order_total = $this->convert_value_by_order_id( $result->order_total, $order_id );
-
-
-		if ( 'wc-refunded' === $result->order_status ) {
-			$order_total = YayCurrencyHelper::format_sale_price( $order_total, 0 );
-		} else {
-			$order_total = YayCurrencyHelper::format_price( $order_total );
-		}
-		wp_send_json_success(
-			array(
-				'earning'     => YayCurrencyHelper::format_price( $earning ),
-				'order_total' => $order_total,
-			)
-		);
-		*/
 	}
 
 	// CALCULATE AGAIN WITH DOKAN PRO
-
-	public function custom_order_shipping_totals( $order, $order_currency ) {
-		$shipping_totals     = array();
-		$line_items_shipping = $order->get_items( 'shipping' );
-		if ( $line_items_shipping ) {
-			$check_item = current( $line_items_shipping );
-			$tax_data   = maybe_unserialize( isset( $check_item['taxes'] ) ? $check_item['taxes'] : '' );
-
-			if ( wc_tax_enabled() ) {
-				$order_taxes  = $order->get_taxes();
-				$legacy_order = ! empty( $order_taxes ) && empty( $tax_data ) && ! is_array( $tax_data );
-			} else {
-				$legacy_order = false;
-				$order_taxes  = false;
-			}
-
-			foreach ( $line_items_shipping as $item_id => $item ) {
-				$line_cost = isset( $item['cost'] ) ? YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( $item['cost'], $order_currency ) ) : '';
-				$refunded  = $order->get_total_refunded_for_item( $item_id, 'shipping' );
-				if ( $refunded ) {
-					$refunded_html = YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( $refunded, $order_currency ) );
-					$line_cost     = $line_cost . '<small class="refunded">-' . $refunded_html . '</small>';
-				}
-
-				$shipping_totals[ $item_id ]['line_cost'] = $line_cost;
-
-				if ( empty( $legacy_order ) && wc_tax_enabled() ) {
-					$shipping_taxes = isset( $item['taxes'] ) ? $item['taxes'] : '';
-					$tax_data       = maybe_unserialize( $shipping_taxes );
-
-					foreach ( $order_taxes as $tax_item ) {
-
-						$tax_item_id    = $tax_item['rate_id'];
-						$tax_item_total = isset( $tax_data['total'][ $tax_item_id ] ) ? $tax_data['total'][ $tax_item_id ] : '';
-						$tax_item_total = ! empty( $tax_item_total ) ? YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( wc_round_tax_total( $tax_item_total ), $order_currency ) ) : '&ndash;';
-
-						$refunded = $order->get_tax_refunded_for_item( $item_id, $tax_item_id, 'shipping' );
-						if ( $refunded ) {
-							$refunded_html  = YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( $refunded, $order_currency ) );
-							$tax_item_total = $tax_item_total . '<small class="refunded">-' . $refunded_html . '</small>';
-						}
-						$shipping_totals[ $item_id ]['line_tax'] = $tax_item_total;
-
-					}
-				}
-			}
-		}
-		return $shipping_totals;
-	}
-
-	public function custom_order_fee_totals( $order, $order_currency ) {
-		$line_items_fee = $order->get_items( 'fee' );
-		$fee_totals     = array();
-		if ( $line_items_fee ) {
-			$check_item = current( $line_items_fee );
-			$tax_data   = maybe_unserialize( isset( $check_item['line_tax_data'] ) ? $check_item['line_tax_data'] : '' );
-			if ( wc_tax_enabled() ) {
-				$order_taxes  = $order->get_taxes();
-				$legacy_order = ! empty( $order_taxes ) && empty( $tax_data ) && ! is_array( $tax_data );
-			} else {
-				$legacy_order = false;
-				$order_taxes  = false;
-			}
-
-			foreach ( $line_items_fee as $item_id => $item ) {
-				$line_total = isset( $item['line_total'] ) ? YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( wc_round_tax_total( $item['line_total'] ), $order_currency ) ) : '';
-				$refunded   = $order->get_total_refunded_for_item( $item_id, 'fee' );
-				if ( $refunded ) {
-					$refunded_html = YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( $refunded, $order_currency ) );
-					$line_total    = $line_total . '<small class="refunded">-' . $refunded_html . '</small>';
-				}
-				$fee_totals[ $item_id ]['line_cost'] = $line_total;
-				if ( empty( $legacy_order ) && wc_tax_enabled() ) {
-					$line_tax_data = isset( $item['line_tax_data'] ) ? $item['line_tax_data'] : '';
-					$tax_data      = maybe_unserialize( $line_tax_data );
-
-					foreach ( $order_taxes as $tax_item ) {
-						$tax_item_id    = $tax_item['rate_id'];
-						$tax_item_total = isset( $tax_data['total'][ $tax_item_id ] ) ? $tax_data['total'][ $tax_item_id ] : '';
-						$tax_item_total = ! empty( $tax_item_total ) ? YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( wc_round_tax_total( $tax_item_total ), $order_currency ) ) : '&ndash;';
-
-						$refunded = $order->get_tax_refunded_for_item( $item_id, $tax_item_id, 'fee' );
-						if ( $refunded ) {
-							$refunded_html  = YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( $refunded, $order_currency ) );
-							$tax_item_total = $tax_item_total . '<small class="refunded">-' . $refunded_html . '</small>';
-						}
-						$fee_totals[ $item_id ]['line_tax'] = $tax_item_total;
-					}
-				}
-			}
-		}
-
-		return $fee_totals;
-	}
-
-	public function custom_table_order_totals( $order, $order_currency ) {
-		$discount        = $this->calculate_price_apply_currency_from_order_currency( $order->get_total_discount(), $order_currency );
-		$shipping        = $this->calculate_price_apply_currency_from_order_currency( $order->get_total_shipping(), $order_currency );
-		$order_totals    = array();
-		$order_totals[0] = YayCurrencyHelper::format_price( $discount );
-		$order_totals[1] = YayCurrencyHelper::format_price( $shipping );
-		if ( wc_tax_enabled() ) {
-			$id = 2;
-			foreach ( $order->get_tax_totals() as $code => $tax_item ) {
-				$tax_amount          = $this->calculate_price_apply_currency_from_order_currency( $tax_item->amount, $order_currency );
-				$order_totals[ $id ] = YayCurrencyHelper::format_price( $tax_amount );
-				++$id;
-			}
-		}
-		return $order_totals;
-	}
-
-	public function custom_order_refund_totals( $order, $order_currency ) {
-		$refunds       = $order->get_refunds();
-		$refund_totals = array();
-		if ( $refunds ) {
-			foreach ( $refunds as $refund ) {
-				$refund_amount                                  = dokan_replace_func( 'get_refund_amount', 'get_amount', $refund );
-				$refund_amount                                  = $this->calculate_price_apply_currency_from_order_currency( $refund_amount, $order_currency );
-				$order_refund_id                                = dokan_get_prop( $refund, 'id' );
-				$refund_totals[ $order_refund_id ]['line_cost'] = '-' . YayCurrencyHelper::format_price( $refund_amount );
-			}
-			$refund_totals = array(
-				'totals'         => $refund_totals,
-				'total_refunded' => '-' . YayCurrencyHelper::format_price( $this->calculate_price_apply_currency_from_order_currency( $order->get_total_refunded(), $order_currency ) ),
-			);
-
-		}
-		return $refund_totals;
-	}
-
-	public function is_dokan_edit_order_page() {
-		global $wp;
-		$flag = false;
-		if ( isset( $wp->query_vars['orders'] ) && ( isset( $wp->query_vars['pagename'] ) ) && 'dashboard' === $wp->query_vars['pagename'] ) {
-			$flag = true;
-		}
-		return $flag;
-	}
 
 	public function custom_yay_dokan_approximately_price() {
 		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
@@ -1320,7 +1168,7 @@ class Dokan {
 		$price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
 		wp_send_json_success(
 			array(
-				'price_html' => YayCurrencyHelper::converted_approximately_html( $this->custom_formatted_price_by_currency( $price, $this->apply_currency ) ),
+				'price_html' => YayCurrencyHelper::converted_approximately_html( YayCurrencyHelper::formatted_price_by_currency( $price, $this->apply_currency ) ),
 			)
 		);
 	}
@@ -1353,27 +1201,26 @@ class Dokan {
 			$balance      = 0;
 			$results      = array();
 			$index        = $opening_balance ? 1 : 0;
-			foreach ( $statements as $key => $statement ) {
-				$statement_type = $statement->trn_type;
-				if ( in_array( $statement_type, array( 'dokan_orders', 'dokan_refund' ) ) ) {
-					$statement_debit  = $this->convert_value_by_order_id( $statement->debit, $statement->trn_id, true );
-					$statement_credit = $this->convert_value_by_order_id( $statement->credit, $statement->trn_id, true );
-					if ( -1 === $statement_debit && -1 === $statement_credit ) {
-						continue;
-					}
-					$debit  = $statement_debit;
-					$credit = $statement_credit;
-				} else {
-					$debit  = $statement->debit;
-					$credit = $statement->credit;
+			foreach ( $statements as $statement ) {
+
+				$order_id   = self::get_order_id_by_trn_id( $statement->trn_id );
+				$order_id   = $order_id ? $order_id : $statement->trn_id;
+				$order_rate = 1;
+				$order      = wc_get_order( $order_id );
+				if ( $order ) {
+					$order_rate = Helper::get_yay_currency_order_rate( $order_id, $order );
+					$order_rate = apply_filters( 'YayCurrency/Dokan/Statement/ExchangeRate', $order_rate, $order, $statement->trn_date, $seller_id );
 				}
+				$debit  = $statement->debit / $order_rate;
+				$credit = $statement->credit / $order_rate;
+
 				$total_debit                += $debit;
 				$total_credit               += $credit;
 				$balance                    += abs( $debit - $credit );
 				$debit                       = YayCurrencyHelper::calculate_price_by_currency( $debit, false, $this->apply_currency );
 				$credit                      = YayCurrencyHelper::calculate_price_by_currency( $credit, false, $this->apply_currency );
-				$results[ $index ]['debit']  = $this->custom_formatted_price_by_currency( $debit, $this->apply_currency );
-				$results[ $index ]['credit'] = $this->custom_formatted_price_by_currency( $credit, $this->apply_currency );
+				$results[ $index ]['debit']  = YayCurrencyHelper::formatted_price_by_currency( $debit, $this->apply_currency );
+				$results[ $index ]['credit'] = YayCurrencyHelper::formatted_price_by_currency( $credit, $this->apply_currency );
 
 				++$index;
 			}
@@ -1383,11 +1230,110 @@ class Dokan {
 			wp_send_json_success(
 				array(
 					'statements'    => $results,
-					'total_debit'   => $this->custom_formatted_price_by_currency( $total_debit, $this->apply_currency ),
-					'total_credit'  => $this->custom_formatted_price_by_currency( $total_credit, $this->apply_currency ),
-					'total_balance' => $this->custom_formatted_price_by_currency( $balance, $this->apply_currency ),
+					'total_debit'   => YayCurrencyHelper::formatted_price_by_currency( $total_debit, $this->apply_currency ),
+					'total_credit'  => YayCurrencyHelper::formatted_price_by_currency( $total_credit, $this->apply_currency ),
+					'total_balance' => YayCurrencyHelper::formatted_price_by_currency( $balance, $this->apply_currency ),
 				)
 			);
+		}
+
+		wp_send_json_error();
+	}
+
+	public function custom_approved_withdraw_request() {
+		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
+		if ( ! $nonce || ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-dokan-nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nonce invalid', 'yay-currency' ) ) );
+		}
+		$seller_id = isset( $_POST['seller_id'] ) ? intval( sanitize_text_field( $_POST['seller_id'] ) ) : false;
+		if ( $seller_id ) {
+			$results = dokan()->withdraw->get_withdraw_requests( $seller_id, 1, 100 );
+			$html    = '';
+
+			foreach ( $results as $key => $row ) {
+				$amount     = $row->get_amount();
+				$charge     = $row->get_charge();
+				$receivable = $row->get_receivable_amount();
+
+				$rate_fee_withdraw = 1;
+				$order_id          = self::get_order_id_by_trn_id( $row->get_id() );
+				$order             = wc_get_order( $order_id );
+				if ( $order ) {
+					$rate_fee_withdraw = Helper::get_yay_currency_order_rate( $order_id, $order );
+				} else {
+					$rate_fee_withdraw = self::get_rate_fee_by_dokan_vendor_balance_by_withdraw( $seller_id, floatval( $amount ) );
+				}
+
+				if ( $rate_fee_withdraw ) {
+					$amount     = floatval( $amount / $rate_fee_withdraw );
+					$receivable = floatval( $receivable / $rate_fee_withdraw );
+					$charge     = floatval( $charge / $rate_fee_withdraw );
+				}
+
+				$amount_withdraw_currency = YayCurrencyHelper::formatted_price_by_currency( $amount, $this->apply_default_currency );
+				$receivable_currency      = YayCurrencyHelper::formatted_price_by_currency( $receivable, $this->apply_default_currency );
+				$charge_withdraw_currency = YayCurrencyHelper::formatted_price_by_currency( $charge, $this->apply_default_currency );
+				$html                    .= ' <tr>
+				<td>' . wp_kses_post( $amount_withdraw_currency ) . '</td>
+				<td>' . esc_html( dokan_withdraw_get_method_title( $row->get_method(), $row ) ) . '</td>
+				<td>' . wp_kses_post( $charge_withdraw_currency ) . '</td>
+				<td>' . wp_kses_post( $receivable_currency ) . '</td>
+				<td>' . esc_html( dokan_format_date( $row->get_date() ) ) . '</td>
+			</tr>';
+
+			}
+
+			wp_send_json_success(
+				array(
+					'html' => $html,
+				)
+			);
+
+		}
+
+		wp_send_json_error();
+	}
+
+	public function custom_cancelled_withdraw_request() {
+		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
+		if ( ! $nonce || ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-dokan-nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nonce invalid', 'yay-currency' ) ) );
+		}
+		$seller_id = isset( $_POST['seller_id'] ) ? intval( sanitize_text_field( $_POST['seller_id'] ) ) : false;
+		if ( $seller_id ) {
+			$results = dokan()->withdraw->get_withdraw_requests( $seller_id, 2, 100 );
+			$html    = '';
+			foreach ( $results as $key => $row ) {
+				$amount            = $row->get_amount();
+				$charge            = $row->get_charge();
+				$receivable        = $row->get_receivable_amount();
+				$rate_fee_withdraw = self::get_rate_fee_by_dokan_vendor_balance_by_withdraw( $seller_id, floatval( $amount ) );
+				if ( $rate_fee_withdraw ) {
+					$amount     = floatval( $amount / $rate_fee_withdraw );
+					$receivable = floatval( $receivable / $rate_fee_withdraw );
+					$charge     = floatval( $charge / $rate_fee_withdraw );
+				}
+
+				$amount_withdraw_currency = YayCurrencyHelper::formatted_price_by_currency( $amount, $this->apply_default_currency );
+				$receivable_currency      = YayCurrencyHelper::formatted_price_by_currency( $receivable, $this->apply_default_currency );
+				$charge_withdraw_currency = YayCurrencyHelper::formatted_price_by_currency( $charge, $this->apply_default_currency );
+				$html                    .= ' <tr>
+				<td>' . wp_kses_post( $amount_withdraw_currency ) . '</td>
+				<td>' . esc_html( dokan_withdraw_get_method_title( $row->get_method(), $row ) ) . '</td>
+				<td>' . wp_kses_post( $charge_withdraw_currency ) . '</td>
+				<td>' . wp_kses_post( $receivable_currency ) . '</td>
+				<td>' . esc_html( dokan_format_date( $row->get_date() ) ) . '</td>
+				<td>' . wp_kses_post( $row->get_note() ) . '</td>
+			</tr>';
+
+			}
+
+			wp_send_json_success(
+				array(
+					'html' => $html,
+				)
+			);
+
 		}
 
 		wp_send_json_error();
@@ -1502,13 +1448,13 @@ class Dokan {
 				}
 
 				$data[ $order_id ] = array(
-					'order_total'        => $this->custom_formatted_price_by_currency( $value['order_total'], $order_currency ),
-					'vendor_earning'     => $this->custom_formatted_price_by_currency( $value['vendor_earning'], $order_currency ),
-					'commission'         => $this->custom_formatted_price_by_currency( $value['commission'], $order_currency ),
-					'dokan_gateway_fee'  => $this->custom_formatted_price_by_currency( $value['dokan_gateway_fee'], $order_currency ),
-					'shipping_total'     => $this->custom_formatted_price_by_currency( $value['shipping_total'], $order_currency ),
-					'shipping_total_tax' => $this->custom_formatted_price_by_currency( $value['shipping_total_tax'], $order_currency ),
-					'tax_total'          => $this->custom_formatted_price_by_currency( $value['tax_total'], $order_currency ),
+					'order_total'        => YayCurrencyHelper::formatted_price_by_currency( $value['order_total'], $order_currency ),
+					'vendor_earning'     => YayCurrencyHelper::formatted_price_by_currency( $value['vendor_earning'], $order_currency ),
+					'commission'         => YayCurrencyHelper::formatted_price_by_currency( $value['commission'], $order_currency ),
+					'dokan_gateway_fee'  => YayCurrencyHelper::formatted_price_by_currency( $value['dokan_gateway_fee'], $order_currency ),
+					'shipping_total'     => YayCurrencyHelper::formatted_price_by_currency( $value['shipping_total'], $order_currency ),
+					'shipping_total_tax' => YayCurrencyHelper::formatted_price_by_currency( $value['shipping_total_tax'], $order_currency ),
+					'tax_total'          => YayCurrencyHelper::formatted_price_by_currency( $value['tax_total'], $order_currency ),
 				);
 
 			}
@@ -1546,7 +1492,7 @@ class Dokan {
 				continue;
 			}
 
-			$data[ $order_id ] = $this->custom_formatted_price_by_currency( $refund->refund_amount, $order_currency );
+			$data[ $order_id ] = YayCurrencyHelper::formatted_price_by_currency( $refund->refund_amount, $order_currency );
 		}
 
 		wp_send_json_success(
@@ -1556,41 +1502,66 @@ class Dokan {
 		);
 	}
 
-	public function get_all_orders_by_date( $start_date, $end_date, $seller_id = 0 ) {
-
-		global $wpdb;
-		if ( ! $seller_id || empty( $seller_id ) ) {
-			$data = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT do.order_id,do.seller_id,do.order_total,do.net_amount,p.date_created_gmt as order_date FROM {$wpdb->prefix}dokan_orders do
-					LEFT JOIN {$wpdb->prefix}wc_orders as p ON do.order_id = p.id
-					WHERE seller_id != 0 AND p.status != 'trash' AND do.order_status IN ('wc-on-hold', 'wc-completed', 'wc-processing') AND DATE(p.date_created_gmt) >= %s AND DATE(p.date_created_gmt) <= %s",
-					$start_date,
-					$end_date
-				)
-			);
-		} else {
-			$data = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT do.order_id,do.seller_id,do.order_total,do.net_amount,p.date_created_gmt as order_date FROM {$wpdb->prefix}dokan_orders do
-					LEFT JOIN {$wpdb->prefix}wc_orders as p ON do.order_id = p.id
-					WHERE seller_id = %d AND p.status != 'trash' AND do.order_status IN ('wc-on-hold', 'wc-completed', 'wc-processing') AND DATE(p.date_created_gmt) >= %s AND DATE(p.date_created_gmt) <= %s",
-					$seller_id,
-					$start_date,
-					$end_date
-				)
-			);
-		}
-
-		return $data;
-
-	}
-
 	public function custom_get_overview_data( $data, $group_by, $start_date, $end_date, $seller_id ) {
 		$start_date        = ! empty( $start_date ) ? sanitize_text_field( $start_date ) : '';
 		$end_date          = ! empty( $end_date ) ? sanitize_text_field( $end_date ) : '';
 		$all_data_by_month = $this->get_all_data_by_month( $start_date, $end_date, $seller_id );
 		$data              = $this->get_data_earning_order_total_by_month( $all_data_by_month );
 		return $data;
+	}
+
+	public function dokan_product_wholesale_price_html( $html ) {
+		if ( ! doing_action( 'woocommerce_before_add_to_cart_button' ) || ! isset( $GLOBALS['post']->ID ) ) {
+			return $html;
+		}
+		$wholesale = get_post_meta( $GLOBALS['post']->ID, '_dokan_wholesale_meta', true );
+		if ( ! $wholesale ) {
+			return $html;
+		}
+		$wholesale_price = ! empty( $wholesale['price'] ) ? $wholesale['price'] : false;
+		if ( ! $wholesale_price ) {
+			return $html;
+		}
+		$wholesale_price    = YayCurrencyHelper::calculate_price_by_currency( $wholesale_price, false, $this->apply_currency );
+		$wholesale_quantity = ! empty( $wholesale['quantity'] ) ? $wholesale['quantity'] : '';
+		$html               = sprintf( '%s: <strong>%s</strong> ( %s: <strong>%s</strong> )', __( 'Wholesale Price', 'dokan' ), wc_price( $wholesale_price ), __( 'Minimum Quantity', 'dokan' ), $wholesale_quantity );
+
+		return $html;
+	}
+
+	public function dokan_rest_prepare_withdraw_object( $response, $withdraw, $request ) {
+		if ( ! apply_filters( 'YayCurrency/Dokan/RevertToDefault', false ) ) {
+			return $response;
+		}
+		$data      = $response->get_data();
+		$seller_id = $withdraw->get_user_id();
+		if ( ! $seller_id || ! isset( $data['amount'] ) ) {
+			return $response;
+		}
+
+		$dokan_vendor_data = self::get_dokan_vendor_balance_data( $seller_id, floatval( $data['amount'] ) );
+
+		if ( ! $dokan_vendor_data ) {
+			return $response;
+		}
+
+		$dokan_vendor_data = array_shift( $dokan_vendor_data );
+		$order_id          = $dokan_vendor_data->order_id;
+
+		$order = wc_get_order( $order_id );
+
+		$rate_fee_withdraw = Helper::get_yay_currency_order_rate( $order_id, $order );
+
+		if ( ! $rate_fee_withdraw ) {
+			return $response;
+		}
+
+		$data['amount']     = floatval( $data['amount'] / $rate_fee_withdraw );
+		$data['receivable'] = floatval( $data['receivable'] / $rate_fee_withdraw );
+		$data['charge']     = floatval( $data['charge'] / $rate_fee_withdraw );
+
+		$response->set_data( $data );
+
+		return $response;
 	}
 }

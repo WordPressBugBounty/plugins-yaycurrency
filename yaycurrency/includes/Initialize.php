@@ -17,6 +17,8 @@ class Initialize {
 	protected function __construct() {
 		// Engine
 		Helper::get_instance_classes( array( '\Yay_Currency', 'Engine' ), Helper::engine_classes() );
+		// Register
+		Helper::get_instance_classes( array( '\Yay_Currency', 'Engine', 'Register' ), Helper::register_classes() );
 		// BEPages
 		Helper::get_instance_classes( array( '\Yay_Currency', 'Engine', 'BEPages' ), Helper::backend_classes() );
 		// Appearance

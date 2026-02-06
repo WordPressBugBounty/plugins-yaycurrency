@@ -104,9 +104,14 @@
                         $(this).find('p').html(yay_dokan_data.last_payment_details);
                     }
                 });
-
+            }
+            if (yay_dokan_data.withdraw_approved_requests_page && 'yes' === yay_dokan_data.withdraw_approved_requests_page) {
+                self.customApprovedWithdrawRequest($('.dokan-withdraw-area .dokan-table.dokan-table-striped tbody'));
             }
 
+            if (yay_dokan_data.withdraw_cancelled_requests_page && 'yes' === yay_dokan_data.withdraw_cancelled_requests_page) {
+                self.customCancelled_WithdrawRequest($('.dokan-withdraw-area .dokan-table.dokan-table-striped tbody'));
+            }
         }
 
         self.addNewProductAction = function () {
@@ -234,6 +239,44 @@
 
                 });
             }
+        }
+
+        self.customApprovedWithdrawRequest = function (elem) {
+            $.ajax({
+                url: yay_dokan_data.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'yay_dokan_custom_approved_withdraw_request',
+                    seller_id: yay_dokan_data.seller_id,
+                    _nonce: yay_dokan_data.nonce,
+                },
+                beforeSend: function (res) {
+                    elem.css('opacity', 0.6);
+                },
+                success: function success(res) {
+                    elem.css('opacity', 1);
+                    res.success ? elem.html(res.data.html) : elem.html('');
+                }
+            });
+        }
+
+        self.customCancelled_WithdrawRequest = function (elem) {
+            $.ajax({
+                url: yay_dokan_data.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'yay_dokan_custom_cancelled_withdraw_request',
+                    seller_id: yay_dokan_data.seller_id,
+                    _nonce: yay_dokan_data.nonce,
+                },
+                beforeSend: function (res) {
+                    elem.css('opacity', 0.6);
+                },
+                success: function success(res) {
+                    elem.css('opacity', 1);
+                    res.success ? elem.html(res.data.html) : elem.html('');
+                }
+            });
         }
 
         self.getValueinParam = function (param, url_string) {

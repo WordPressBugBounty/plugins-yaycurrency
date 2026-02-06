@@ -24,17 +24,17 @@ class WooCommerceProductAddons {
 
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
 
-		add_filter( 'yay_currency_price_options', array( $this, 'get_price_options' ), 10, 2 );
+		add_filter( 'YayCurrency/ApplyCurrency/GetPriceOptions', array( $this, 'get_price_options' ), 10, 2 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );
 
 		add_filter( 'woocommerce_product_addons_option_price_raw', array( $this, 'custom_product_addons_option_price' ), 10, 2 );
 		add_filter( 'woocommerce_product_addons_get_item_data', array( $this, 'custom_cart_item_addon_data' ), 10, 3 );
 		// Place Order
 		add_filter( 'woocommerce_product_addons_order_line_item_meta', array( $this, 'custom_order_line_item_meta' ), 10, 4 );
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 
-		add_filter( 'yay_currency_get_product_price_by_3rd_plugin', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
-		add_filter( 'yay_currency_get_price_options_by_cart_item', array( $this, 'get_price_options_by_addons' ), 10, 5 );
+		add_filter( 'YayCurrency/ApplyCurrency/ThirdPlugins/GetProductPrice', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_options_by_addons' ), 10, 5 );
 
 	}
 
@@ -147,7 +147,7 @@ class WooCommerceProductAddons {
 				return $addon_data;
 			}
 			$cart_item_addon_data_value = $this->custom_formatted_item_fee( $args, $this->apply_currency, $addon );
-			$addon_data['value']        = apply_filters( 'yay_currency_cart_item_addon_data', $cart_item_addon_data_value, $args, $cart_item, $addon, $this->apply_currency );
+			$addon_data['value']        = apply_filters( 'YayCurrency/ProductAddons/CartItem/GetAddonData', $cart_item_addon_data_value, $args, $cart_item, $addon, $this->apply_currency );
 		}
 
 		return $addon_data;
@@ -218,8 +218,8 @@ class WooCommerceProductAddons {
 		$data = array(
 			'price_options_default_currency'             => $price_options_default_currency,
 			'price_options_current_currency'             => $price_options_current_currency,
-			'product_price_with_option_default_currency' => $product_price + $price_options_default_currency,
-			'product_price_with_option_current_currency' => $product_price_by_currency + $price_options_current_currency,
+			'product_price_with_option_default_currency' => (float) $product_price + (float) $price_options_default_currency,
+			'product_price_with_option_current_currency' => (float) $product_price_by_currency + (float) $price_options_current_currency,
 		);
 		return $data;
 	}

@@ -2,8 +2,8 @@
 Contributors: YayCommerce
 Tags: currency switcher, multi currency, woocommerce, currency, currency converter, multicurrency
 Requires at least: 3.0
-Tested up to: 6.8
-Stable tag: 3.2
+Tested up to: 6.9
+Stable tag: 3.3.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,31 +11,35 @@ WooCommerce Multi-Currency made easy, powerful, and flexible.
 
 == Description ==
 
-**Seamless Multi-Currency Experience for WooCommerce**
+Selling to customers in Europe, North America, Asia, or somewhere else? 
 
-YayCurrency makes it easy to sell globally by enabling your WooCommerce store to **display and accept payments in multiple currencies**. 
+YayCurrency makes it easy to offer a localized shopping experience **no matter where your buyers are**.
 
-[Admin Demo](https://demo.yaycommerce.com/try-yaycurrency/) | [Quick Demo](https://demo.yaycommerce.com/yaycurrency/product/cap/) | As seen on [WPMayor](https://wpmayor.com/service/product-review-checkout/)    ✅
+It is a powerful yet easy-to-use WooCommerce multi-currency switcher that helps you grow your international sales by letting customers **shop and pay in their local currency**.
 
-Designed with simplicity and power in mind, it offers a smooth currency-switching experience for your international customers—no coding required.
+🌐 With automatic exchange rates, prices based on country, and compatibility with [50+ popular WooCommerce plugins](https://docs.yaycommerce.com/yaycurrency/compatibility), YayCurrency makes you ready to scale your store.
 
-[Documentation](https://docs.yaycommerce.com/yaycurrency/main-features) | [YayCurrency Pro](https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/) 🚀
+👉 [Quick Demo](https://demo.yaycommerce.com/yaycurrency/product/cap/) 
+
+🎮 [Admin Demo](https://demo.yaycommerce.com/yaycurrency/product/cap/)
+
+💎 [YayCurrency Pro](https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/) 
 
 **Key Features**
 
-**Local Currency Payments** – Let customers complete checkout in their own currency for a consistent shopping experience.
+**Local Currency Payments** – Showing real-time converted prices across your store and checkout.
 
-**Accurate Order Emails** – Order confirmations and notifications are sent in the customer’s selected currency, ensuring clarity.
+**Accurate Order Emails** – Order confirmation emails are sent in the customer’s selected currency, ensuring clarity and building trust.
 
-**Multi-Currency Reporting** – Gain insights into sales performance across currencies with dedicated reporting tools.
+**Compatible with Cache Plugins** - Currency switching works smoothly without affecting your site speed or caching setup.
 
-**Automatic Exchange Rates** – Keep prices accurate and up-to-date with live exchange rate updates.
+**Customizable Conversion Fees & Rounding** – Adding conversion margins, applying percentage-based payment fees, and rounding prices clean, customer-friendly pricing displays.
 
-**Customizable Conversion Fees & Rounding** – Apply conversion margins and round prices neatly to suit your pricing strategy.
-
-**Perfect for Global Stores**
+**Sell Globally with Localized Pricing – No Code Needed!**
 
 Whether you're selling in USD, EUR, GBP, or beyond, YayCurrency allows you to display product prices in local currencies and handle payments accordingly. It works out of the box with a quick and intuitive setup, helping you create a frictionless shopping experience for customers worldwide.
+
+Used by WPMayor and trusted by store owners worldwide.
 
 [youtube https://youtu.be/2nNiZw07S5g]
 
@@ -68,13 +72,13 @@ Using a third-party plugin? No worries, this WooCommerce multi currency free plu
 
 - Stripe For WooCommerce
 - WooCommerce Subscriptions
-- [Product Add-Ons](https://woo.com/products/product-add-ons/)
-- [Name Your Price](https://woocommerce.com/products/name-your-price/)
+- Product Add-Ons
+- Name Your Price
 - Table Rate Shipping plugin
 - WooCommerce Per Product Shipping plugin
 - PayPal Payments
 - PeachPay
-- [Pay for Payment for WooCommerce](https://wordpress.org/plugins/woocommerce-pay-for-payment/)
+- Pay for Payment for WooCommerce
 - WP Grid Builder Caching
 - CartFlows
 - JetSmartFilters
@@ -82,7 +86,7 @@ Using a third-party plugin? No worries, this WooCommerce multi currency free plu
 - WooCommerce Custom Product Addons
 - Woo Cart Product module of Divi theme
 - B2BKing for WooCommerce
-- [Wholesale Pro by Barn2](https://docs.yaycommerce.com/yaycurrency/compatibility/wholesale-pro-by-barn2)
+- Wholesale Pro by Barn2
 - WooCommerce TM Extra Product Options
 - WooCommerce One Page Checkout
 - Woo Discount Rules plugin 
@@ -94,7 +98,6 @@ Using a third-party plugin? No worries, this WooCommerce multi currency free plu
 - LiteSpeed Cache plugin
 - HivePress plugin
 - Buy Once or Subscribe for WooCommerce Subscription plugin
-
 
 ###💎 PREMIUM-ONLY FEATURES
 
@@ -124,8 +127,9 @@ Using Direct bank transfer, Check payments, Cash on delivery, PayPal Standard, o
 - Then, you can localize each currency by changing the formatting options in the currency's drawer panel.
 
 Find out more:
-Approved by WooCommerce: [Multi-Currency Switcher](https://woocommerce.com/products/multi-currency-switcher/)
-Reviewed on WPBlogX: [YayCurrency review](https://wpblogx.com/yaycurrency-review/)
+✅ Approved by WooCommerce: [Multi-Currency Switcher on WooCommerce.com ](https://woocommerce.com/products/multi-currency-switcher/)
+
+🔍 Want to see YayCommerce in action? [View all YayCommerce plugin demos](https://demo.yaycommerce.com/) and explore the full suite of features.
 
 **COMMON USE CASES**
 
@@ -144,7 +148,6 @@ This WooCommerce multi currency free plugin works with all major B2B, wholesale,
 **Just a Startup in Progress?**
 No worries, try out YayCurrency free version. It is the most beginner- and startup-friendly plugin in the world of WordPress. 
 
-
 Happy Currency-Switching! 💛 
 
 == Installation ==
@@ -156,18 +159,83 @@ Happy Currency-Switching! 💛
 6. To show a currency switcher widget, go to **Appearance** > **Widgets** and add the YayCurrency widget to your desired position such as header, footer, main sidebar, WooCommerce sidebar, product sidebar, and so on
 7. To display the currency switcher on WooCommerce product pages, to go **YayCurrency** > **Display Options** > Show on single product page.
 
-== Frequently Asked Questions ==
+## Frequently Asked Questions
 
-= Will this plugin charge customers in the store's base currency? =
-This WooCommerce multi currency free plugin allows you to accept checkout payments in local currencies. By enabling this Woo multi-currency checkout, you allow your customers to pay in the currency they have chosen.
+### Can I round prices to clean numbers?
 
-= Can I display currency code in place of currency symbol on the site?
-Yes, you can fully customize how the WooCommerce multi currency plugin display on the front end using national flag, currency name, currency code, currency symbol, etc. in the [currency switcher's display options](https://docs.yaycommerce.com/yaycurrency/configurations/display-options).
+Yes! YayCurrency has built-in price rounding:
 
-= Is YayCurrency GDPR-compliant? =
-A big yes, this WooCommerce multi currency free plugin is compliant with GDPR. It collects no sensitive information. 
+1. Go to **YayCommerce → YayCurrency → Manage Currency tab**
+2. Click the **gear icon** next to your currency
+3. Scroll to **Rounding** section
+4. Enable **Custom Rounding**
+5. Choose rounding threshold:
+   * 0.10 (rounds to nearest 10 cents: $365.37 → $365.40)
+   * 0.50 (rounds to nearest 50 cents: $365.37 → $365.50)
+   * 1 (rounds to nearest dollar: $365.37 → $366)
+   * 10 (rounds to nearest $10: $365.37 → $370)
+   * 100 (rounds to nearest $100: $365.37 → $400)
+6. Test with the **live tester** to preview results
+7. Click **Save**
 
-= I got issues. How can I get support? =
+This makes prices look cleaner and more professional in each currency.
+
+### Why are some prices not converting?
+
+**Check these common causes:**
+
+**1. Price not set in base currency**
+Go to the product and verify it has a price in your WooCommerce base currency.
+
+**2. Third-party plugin conflict**
+Some pricing plugins override YayCurrency. Check compatibility at **YayCommerce → YayCurrency → Advanced Settings tab**.
+
+**3. AJAX loading issue**
+If using AJAX-loaded content, prices might not convert. Go to **YayCurrency → Settings** and enable **Compatible with AJAX** option (Pro version).
+
+**4. Caching plugin interference**
+Go to **YayCurrency → Settings** and enable **Compatible with Cache Plugins** option. Then clear your cache.
+
+**5. Custom price display**
+If using custom code or shortcodes to display prices, you may need to use YayCurrency's filter hooks. See documentation for `yay_currency_should_format_product_price` filter.
+
+### Can customers check out in a different currency than they browsed in?
+
+Yes, with the **Checkout in Different Currency** option:
+
+1. Go to **YayCurrency → Checkout Options tab**
+2. Enable **Checkout in Different Currency** toggle
+3. Click **Save Changes**
+
+Customers will see a currency selector at checkout and can choose their preferred payment currency.
+
+**Important:** Make sure your payment gateway supports the currencies you enable for checkout. Configure payment methods per currency in the **Checkout Options tab**.
+
+### How do I set specific payment gateways for specific currencies?
+
+**Example:** Accept PayPal for USD but only bank transfer for EUR.
+
+1. Go to **YayCommerce → YayCurrency → Checkout Options tab**
+2. Find the **Payment Methods** section
+3. For each currency, you'll see checkboxes for available payment gateways
+4. Check only the payment methods you want available for that currency
+5. Click **Save Changes**
+
+Now when customers select a currency at checkout, they'll only see payment methods you've enabled for that currency.
+
+### Can I force customers to pay in a specific currency? (Pro)
+
+Yes, with YayCurrency Pro:
+
+1. Go to **YayCurrency → Checkout Options tab**
+2. Enable **Force Currency for Specific Payment Method**
+3. Select which currency must be used for each payment gateway
+4. Optionally enable **Reload Checkout Page** to refresh when currency changes
+5. Click **Save Changes**
+
+**Example:** Force all PayPal payments to be in USD, regardless of what currency the customer browsed in.
+
+### I got issues. How can I get support? 
 Please [create a topic](https://wordpress.org/support/plugin/yaycurrency/) or [contact us](https://yaycommerce.com/support/) to get help. We’re sure to resolve the glitch!
 To quickly get the answers, please attach screenshots of currently active WooCommerce plugins on your website.
 
@@ -179,6 +247,56 @@ To quickly get the answers, please attach screenshots of currently active WooCom
 5. Checkout permission for different payment methods and currencies 
 
 == Changelog ==
+= Jan 22, 2026 - Version 3.3.3 =
+- Updated: Tested up to WP 6.9
+- Fixed: Shipping class cost conversion issue when checkout currency option is disabled.
+
+= Jan 15, 2026 - Version 3.3.2 =
+- Added: Permission checks for plugin activation, installation, and updates.
+- Added: Cache method selection to advance settings. [Pro version only]
+- Updated: Cost assignment.
+- Updated: WC tested up to: 10.4.3
+- Improved: Transient variable name in Helper class for consistency.
+- Improved: Currency switcher logic to ensure output buffering is correctly initiated.
+- Fixed: Compatible with WooCommerce Product Options plugin.
+- Fixed: PHP Warning cannot modify header information - headers already sent in...
+- Fixed: The issue with the decimals being empty.
+- Fixed: PHP Warning: Undefined array key “aria-hidden”.
+- Fixed: Shipping class cost calculation.
+- Fixed: set_cookie warning PHP 8.x.
+- Fixed: delete_currency REST endpoint issue reported by PatchStack.
+
+= Dec 8, 2025 - Version 3.3.1 =
+- Fixed: delete_currency REST endpoint issue reported by PatchStack
+
+= Oct 29, 2025 - Version 3.3 =
+- Added: Sierra Leonean Leone (SLE) currency
+- Added: Filter hooks to allow custom currencies and change currency flags
+- Added: The yay_currency_will_not_round_shipping_cost filter hook to disable rounding of the shipping fee
+- Added: Price formatting support for WooCommerce Blocks (Pro)
+- Added: A fallback method to fetch the exchange rate
+- Improved: New admin settings page UI
+- Improved: Flags icons folder
+- Improved: Currency settings now sync between WooCommerce settings and the YayCurrency menu
+- Improved: Currency switcher now features a new frontend style
+- Improved: Changed the names of multiple filter and action hooks for better clarity
+- Improved: Ensure the default currency position is set to ‘left’ if not specified
+- Improved: Ensure the default currency code display is set to ‘not_display’ if not specified (Pro)
+- Improved: Add a rest API compatible with caching options instead of using AJAX (Pro)
+- Improved: Caching for geolocate_via_api method (Pro)
+- Fixed: Compatible with PPOM – Product Addons & Custom Fields for WooCommerce plugin
+- Fixed: Compatible with PayTR Virtual POS WooCommerce - iFrame API plugin
+- Fixed: Compatible with Barn2 WooCommerce Wholesale Pro & Barn2 WooCommerce Discount Manager plugins
+- Fixed: Compatible with Donation Platform for WooCommerce: Fundraising & Donation Management plugin
+- Fixed: Compatible with FunnelKit Funnel Builder Pro plugin
+- Fixed: Compatible with FunnelKit Payment Gateway for Stripe WooCommerce plugin
+- Fixed: Compatible with Art-i Melhor Envio, Art-i Marketplace/Melhor Envio plugins
+- Fixed: Compatible with WooCommerce Shipit plugin
+- Fixed: Compatible with WooCommerce blocks (Cart & Checkout pages) when the fallback currency is enabled.
+- Fixed: Subtotal mini cart not working in Elementor Pro plugin
+- Fixed: Subtotal mini cart not working in Advanced Product Fields for WooCommerce plugin
+- Fixed: in_span warning with woocommerce 10.x.x.
+- WC tested up to: 10.0.4
 
 = May 7, 2025 - Version 3.2 =
 - Added: Finance API options (Pro)

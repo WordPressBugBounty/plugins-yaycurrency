@@ -78,13 +78,14 @@ class ThirdPartyPlugins {
 
 		// YayPricing. Link plugin: https://wordpress.org/plugins/yaypricing/
 		if ( defined( 'YAYDP_VERSION' ) ) {
-			add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'yay_pricing_get_product_price_by_cart_item' ), 30, 3 );
-			add_filter( 'yay_currency_get_product_price_default_by_cart_item', array( $this, 'yay_pricing_get_product_price_default_by_cart_item' ), 10, 2 );
+			add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'yay_pricing_get_product_price_by_cart_item' ), 30, 3 );
+			add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetProductPrice', array( $this, 'yay_pricing_get_product_price_default_by_cart_item' ), 10, 2 );
 		}
 
 		// WC Price History. Link plugin: https://github.com/kkarpieszuk/wc-price-history
 		if ( defined( 'WC_PRICE_HISTORY_VERSION' ) ) {
 			add_filter( 'wc_price_history_lowest_price_html_raw_value_taxed', array( $this, 'convert_wc_price_history_lowest_price' ), 10, 2 );
+			add_filter( 'wc_price_history_variations_add_history_lowest_price', array( $this, 'convert_wc_price_history_variations_add_history_lowest_price' ), 10, 4 );
 		}
 		// BACKEND REPORT
 
@@ -246,6 +247,10 @@ class ThirdPartyPlugins {
 		if ( is_admin() ) {
 			return $lowest_price;
 		}
+		return apply_filters( 'yay_currency_convert_price', $lowest_price );
+	}
+
+	public function convert_wc_price_history_variations_add_history_lowest_price( $lowest_price, $variation_attributes, $product_variable, $variation ) {
 		return apply_filters( 'yay_currency_convert_price', $lowest_price );
 	}
 

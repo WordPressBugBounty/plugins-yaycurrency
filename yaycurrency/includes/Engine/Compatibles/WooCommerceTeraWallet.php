@@ -17,7 +17,7 @@ class WooCommerceTeraWallet {
 	private $apply_currency     = array();
 
 	public function __construct() {
-		if ( class_exists( 'WooWallet' ) ) {
+		if ( class_exists( 'Woo_Wallet' ) ) {
 			$this->converted_currency = YayCurrencyHelper::converted_currency();
 			$this->apply_currency     = YayCurrencyHelper::detect_current_currency();
 
@@ -41,7 +41,7 @@ class WooCommerceTeraWallet {
 		}
 
 		if ( isset( $this->apply_currency['currency'] ) ) {
-			return wp_kses_post( html_entity_decode( $this->apply_currency['symbol'] ) );
+			return wp_kses_post( Helper::decode_html_entity( $this->apply_currency['symbol'] ) );
 		}
 
 		return $currency_symbol;

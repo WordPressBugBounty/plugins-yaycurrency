@@ -20,7 +20,7 @@ class YITHPointsAndRewards {
 
 		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
 
-		add_filter( 'yay_currency_converted_coupon_price', array( $this, 'converted_coupon_price' ), 10, 4 );
+		add_filter( 'YayCurrency/GetCouponAmount', array( $this, 'converted_coupon_price' ), 10, 3 );
 
 		add_filter( 'ywpar_get_point_earned_price', array( $this, 'prevent_convert_points_by_price' ), 10, 3 );
 		add_filter( 'ywpar_calculate_product_discount', array( $this, 'custom_price_value_of_points' ), 10, 3 );
@@ -31,7 +31,7 @@ class YITHPointsAndRewards {
 		add_filter( 'woocommerce_available_variation', array( $this, 'format_variation_price_discount_fixed_conversion' ), 11, 3 );
 	}
 
-	public function converted_coupon_price( $converted_coupon_price, $coupon, $price, $apply_currency ) {
+	public function converted_coupon_price( $converted_coupon_price, $coupon, $apply_currency ) {
 		if ( \YITH_WC_Points_Rewards_Redemption()->check_coupon_is_ywpar( $coupon ) ) {
 			// Fix for change currency after apply points
 			$conversion_rate_method = \YITH_WC_Points_Rewards()->get_option( 'conversion_rate_method' );
@@ -65,19 +65,28 @@ class YITHPointsAndRewards {
 
 	public function set_rewards_conversion_rate( $conversion ) {
 		$rewards_conversion_rate = get_option( 'ywpar_rewards_conversion_rate' );
-		$conversion              = reset( $rewards_conversion_rate );
+		if ( ! is_array( $rewards_conversion_rate ) || ! is_object( $rewards_conversion_rate ) ) {
+			return $conversion;
+		}
+		$conversion = reset( $rewards_conversion_rate );
 		return $conversion;
 	}
 
 	public function set_rewards_percentual_conversion_rate( $conversion ) {
 		$percentual_conversion_rate = get_option( 'ywpar_rewards_percentual_conversion_rate' );
-		$conversion                 = reset( $percentual_conversion_rate );
+		if ( ! is_array( $percentual_conversion_rate ) || ! is_object( $percentual_conversion_rate ) ) {
+			return $conversion;
+		}
+		$conversion = reset( $percentual_conversion_rate );
 		return $conversion;
 	}
 
 	public function set_conversion_points_rate( $conversion ) {
 		$earn_points_conversion_rate = get_option( 'ywpar_earn_points_conversion_rate' );
-		$conversion                  = reset( $earn_points_conversion_rate );
+		if ( ! is_array( $earn_points_conversion_rate ) || ! is_object( $earn_points_conversion_rate ) ) {
+			return $conversion;
+		}
+		$conversion = reset( $earn_points_conversion_rate );
 		return $conversion;
 	}
 

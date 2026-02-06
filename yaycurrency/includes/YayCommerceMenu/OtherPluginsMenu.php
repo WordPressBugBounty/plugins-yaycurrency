@@ -281,6 +281,15 @@ class OtherPluginsMenu {
 				'type'              => array( 'marketing' ),
 				'version'           => 0,
 			),
+			'yayreviews'        => [
+				'slug'              => 'yay-customer-reviews-woocommerce',
+				'name'              => 'YayReviews – Advanced Customer Reviews for WooCommerce',
+				'short_description' => 'Collect more customer reviews through automated reminders and rewards.',
+				'icon'              => 'https://ps.w.org/yay-customer-reviews-woocommerce/assets/icon-256x256.png?rev=3340109',
+				'download_link'     => 'https://downloads.wordpress.org/plugin/yay-customer-reviews-woocommerce.zip',
+				'type'              => [ 'woocommerce' ],
+				'version'           => 0,
+			],
 		);
 	}
 
@@ -334,6 +343,9 @@ class OtherPluginsMenu {
 	}
 
 	public function yay_recommended_activate_plugin() {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			wp_send_json_error( array( 'mess' => __( 'You are not authorized to activate plugins', 'yaycommerce' ) ) );
+		}
 		try {
 			if ( isset( $_POST['file'] ) ) {
 				$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( $_POST['nonce'] ) : '';
@@ -393,6 +405,9 @@ class OtherPluginsMenu {
 				$skin     = new \WP_Ajax_Upgrader_Skin();
 				$upgrader = new \Plugin_Upgrader( $skin );
 				if ( 'install' === $type ) {
+					if ( ! current_user_can( 'install_plugins' ) ) {
+						wp_send_json_error( array( 'mess' => __( 'You are not authorized to install plugins', 'yaycommerce' ) ) );
+					}
 					$result = $upgrader->install( $plugin );
 					if ( is_wp_error( $result ) ) {
 						wp_send_json_error(
@@ -446,6 +461,9 @@ class OtherPluginsMenu {
 						);
 					}
 				} else {
+					if ( ! current_user_can( 'update_plugins' ) ) {
+						wp_send_json_error( array( 'mess' => __( 'You are not authorized to update plugins', 'yaycommerce' ) ) );
+					}
 					$is_active = is_plugin_active( $plugin );
 					$result    = $upgrader->upgrade( $plugin );
 					if ( is_wp_error( $result ) ) {
@@ -455,6 +473,9 @@ class OtherPluginsMenu {
 							)
 						);
 					} else {
+						if ( ! current_user_can( 'activate_plugins' ) ) {
+							wp_send_json_error( array( 'mess' => __( 'Permission denied.', 'yaycommerce' ) ) );
+						}
 						activate_plugin( $plugin );
 						wp_send_json_success(
 							array(
@@ -526,6 +547,15 @@ class OtherPluginsMenu {
 		}
 		if ( 'wp-whatsapp' === $pluginDetail['slug'] ) {
 			$existProVer = array_key_exists( 'whatsapp-for-wordpress/whatsapp.php', $allPlugin ) === true ? 'whatsapp-for-wordpress/whatsapp.php' : false;
+		}
+		if ( 'yay-customer-reviews-woocommerce' === $pluginDetail['slug'] ) {
+			if ( array_key_exists( 'yayreviews-pro/yay-customer-reviews-woocommerce.php', $allPlugin ) ) {
+				$existProVer = 'yayreviews-pro/yay-customer-reviews-woocommerce.php';
+			} elseif ( array_key_exists( 'yay-customer-reviews-woocommerce/yay-customer-reviews-woocommerce.php', $allPlugin ) ) {
+				$existProVer = 'yay-customer-reviews-woocommerce/yay-customer-reviews-woocommerce.php';
+			} elseif ( array_key_exists( 'yayreviews/yay-customer-reviews-woocommerce.php', $allPlugin ) ) {
+				$existProVer = 'yayreviews/yay-customer-reviews-woocommerce.php';
+			}
 		}
 		return $existProVer;
 	}

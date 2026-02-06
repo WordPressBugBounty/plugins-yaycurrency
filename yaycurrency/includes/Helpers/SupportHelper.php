@@ -47,12 +47,12 @@ class SupportHelper {
 	}
 
 	public static function get_price_options_by_3rd_plugin( $product ) {
-		$price_options = apply_filters( 'yay_currency_price_options', 0, $product );
+		$price_options = apply_filters( 'YayCurrency/ApplyCurrency/GetPriceOptions', 0, $product );
 		return $price_options;
 	}
 
 	public static function get_price_options_default_by_3rd_plugin( $product ) {
-		$price_options = apply_filters( 'yay_currency_price_options_default', 0, $product );
+		$price_options = apply_filters( 'YayCurrency/StoreCurrency/GetPriceOptions', 0, $product );
 		return $price_options;
 	}
 
@@ -66,7 +66,7 @@ class SupportHelper {
 	}
 
 	public static function get_product_price_by_3rd_plugin( $product_price, $product, $apply_currency ) {
-		$product_price = apply_filters( 'yay_currency_get_product_price_by_3rd_plugin', $product_price, $product, $apply_currency );
+		$product_price = apply_filters( 'YayCurrency/ApplyCurrency/ThirdPlugins/GetProductPrice', $product_price, $product, $apply_currency );
 		return $product_price;
 	}
 
@@ -91,11 +91,134 @@ class SupportHelper {
 		$product_price = $_product->get_price( 'edit' );
 		if ( $apply_currency ) {
 			$product_price = YayCurrencyHelper::calculate_price_by_currency( $product_price, false, $apply_currency );
-			$product_price = apply_filters( 'yay_currency_get_product_price_by_cart_item', $product_price, $cart_item, $apply_currency );
-			$price_options = apply_filters( 'yay_currency_get_price_options_by_cart_item', 0, $cart_item, $product_id, $product_price, $apply_currency );
+			$product_price = apply_filters( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', $product_price, $cart_item, $apply_currency );
+			$price_options = apply_filters( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', 0, $cart_item, $product_id, $product_price, $apply_currency );
 			return $price_options ? $product_price + $price_options : $product_price;
 		}
 		return $product_price;
+	}
+
+	public static function get_total_shipping_fee_flat_rate_method( $shipping_fee, $method, $data ) {
+		$apply_currency               = isset( $data['apply_currency'] ) ? $data['apply_currency'] : false;
+		$will_not_round_shipping_cost = apply_filters( 'yay_currency_will_not_round_shipping_cost', false );
+		if ( ! $apply_currency ) {
+			return $shipping_fee;
+		}
+		$has_costs   = false;
+		$is_fallback = isset( $data['is_fallback'] ) ? $data['is_fallback'] : false;
+		$shipping    = new \WC_Shipping_Flat_Rate( $method->instance_id );
+		$cost        = $shipping->get_option( 'cost' );
+		if ( ! empty( $cost ) ) {
+			if ( ! is_numeric( $cost ) ) {
+				$has_costs    = preg_match( '/\[fee(\s|\])/i', $cost ) ? true : false;
+				$args         = array(
+					'qty'  => self::get_product_quantity_item_qty(),
+					'cost' => apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotalWithShipping', 0, $apply_currency ),
+				);
+				$shipping_fee = self::evaluate_cost( $cost, $args, false, $is_fallback );
+				if ( is_numeric( $shipping_fee ) && ! strpos( $cost, 'fee' ) ) {
+					$shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $shipping_fee, true, $apply_currency );
+				}
+				$shipping_fee = apply_filters( 'YayCurrency/InclTax/GetShippingFee', $shipping_fee, $method, $apply_currency );
+			} else {
+				$shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $cost, true, $apply_currency );
+			}
+		} else {
+			$shipping_fee = 0;
+		}
+
+		$shipping_classes = WC()->shipping->get_shipping_classes();
+		if ( empty( $shipping_classes ) ) {
+			return $shipping_fee;
+		}
+
+		$package                = array();
+		$cart_shipping_packages = WC()->cart->get_shipping_packages();
+		if ( $cart_shipping_packages && is_array( $cart_shipping_packages ) ) {
+			$package = array_shift( $cart_shipping_packages );
+		}
+		$product_shipping_classes = $shipping->find_shipping_classes( $package );
+		$rate_class_cost          = 0;
+		$shipping_classes_cost    = 0;
+		foreach ( $product_shipping_classes as $shipping_class => $products ) {
+			$class_has_fee_costs = false;
+			$shipping_class_term = get_term_by( 'slug', $shipping_class, 'product_shipping_class' );
+			$class_cost_string   = $shipping_class_term && $shipping_class_term->term_id ? $shipping->get_option( 'class_cost_' . $shipping_class_term->term_id, $shipping->get_option( 'class_cost_' . $shipping_class, '' ) ) : $shipping->get_option( 'no_class_cost', '' );
+			if ( '' === $class_cost_string ) {
+				continue;
+			}
+			if ( ! empty( $class_cost_string ) && ! is_numeric( $class_cost_string ) ) {
+				$class_has_fee_costs = preg_match( '/\[fee(\s|\])/i', $class_cost_string ) ? true : false;
+				//calculate class cost
+				$subtotal = array_sum( wp_list_pluck( $products, 'line_total' ) );
+
+				$class_cost = self::evaluate_cost(
+					$class_cost_string,
+					array(
+						'qty'  => array_sum( wp_list_pluck( $products, 'quantity' ) ),
+						'cost' => YayCurrencyHelper::calculate_price_by_currency( $subtotal, false, $apply_currency ),
+					)
+				);
+
+			} else {
+				if ( is_numeric( $cost ) ) {
+					if ( $class_has_fee_costs ) {
+						$class_cost_string = YayCurrencyHelper::calculate_price_by_currency( $class_cost_string, $will_not_round_shipping_cost, $apply_currency );
+					}
+				}
+
+				$class_cost = $class_cost_string;
+			}
+
+			if ( is_numeric( $class_cost ) ) {
+				if ( ! $class_has_fee_costs ) {
+					$rate_class_cost += YayCurrencyHelper::calculate_price_by_currency( $class_cost, $will_not_round_shipping_cost, $apply_currency );
+				} elseif ( 'class' === $shipping->type ) {
+					$rate_class_cost += $class_cost;
+				} else {
+					$shipping_classes_cost = $class_cost > $shipping_classes_cost ? $class_cost : $shipping_classes_cost;
+				}
+			}
+
+			if ( 'order' === $shipping->type && $shipping_classes_cost ) {
+				$rate_class_cost += $shipping_classes_cost;
+			}
+		}
+		if ( $has_costs ) {
+			if ( wc_tax_enabled() && 'incl' === get_option( 'woocommerce_tax_display_cart' ) ) {
+				$tax_class_cost = \WC_Tax::calc_shipping_tax( $rate_class_cost, \WC_Tax::get_shipping_tax_rates() );
+				if ( $tax_class_cost && is_array( $tax_class_cost ) ) {
+					$rate_class_cost += array_shift( $tax_class_cost );
+				}
+			}
+
+			if ( ! is_numeric( $cost ) ) {
+				$cost = self::evaluate_cost(
+					$cost,
+					array(
+						'qty'  => self::get_product_quantity_item_qty(),
+						'cost' => apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotalWithShipping', 0, $apply_currency ),
+					)
+				);
+			} else {
+				$cost = YayCurrencyHelper::calculate_price_by_currency( $cost, $will_not_round_shipping_cost, $apply_currency );
+			}
+			$shipping_fee = $rate_class_cost + $cost;
+		} else {
+			$shipping_fee += $rate_class_cost;
+		}
+		return $shipping_fee;
+
+	}
+
+	public static function detect_shipping_methods_ignore() {
+		$shipping_methods_args = array( 'alids', 'betrs_shipping', 'printful_shipping', 'easyship', 'printful_shipping_STANDARD', 'BookVAULT Shipping' );
+		$special_methods_args  = array( 'per_product', 'tree_table_rate' );
+
+		return array(
+			'shipping_methods' => apply_filters( 'YayCurrency/Detect/Ignore/ShippingMethods', $shipping_methods_args ),
+			'special_methods'  => apply_filters( 'YayCurrency/Detect/Ignore/SpecialMethods', $special_methods_args ),
+		);
 	}
 
 	// Calculate Cart Subtotal
@@ -115,17 +238,36 @@ class SupportHelper {
 		return $subtotal;
 	}
 
+	public static function get_cart_subtotal_with_shipping( $apply_currency = array() ) {
+		$subtotal      = 0;
+		$cart_contents = WC()->cart->get_cart_contents();
+		foreach ( $cart_contents  as $cart_item ) {
+			$product = isset( $cart_item['data'] ) ? $cart_item['data'] : false;
+			if ( $product && $product->needs_shipping() ) {
+				$product_price = self::calculate_product_price_by_cart_item( $cart_item, $apply_currency );
+				$subtotal      = $subtotal + ( $product_price * $cart_item['quantity'] );
+			}
+		}
+		return $subtotal;
+	}
+
 	public static function get_product_price_default_by_cart_item( $cart_item ) {
 		$product_id    = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
 		$product_price = self::get_product_price( $product_id );
-		$product_price = apply_filters( 'yay_currency_get_product_price_default_by_cart_item', $product_price, $cart_item );
-		$price_options = apply_filters( 'yay_currency_get_price_options_default_by_cart_item', 0, $cart_item, $product_id, $product_price );
+		$product_price = apply_filters( 'YayCurrency/StoreCurrency/ByCartItem/GetProductPrice', $product_price, $cart_item );
+		$price_options = apply_filters( 'YayCurrency/StoreCurrency/ByCartItem/GetPriceOptions', 0, $cart_item, $product_id, $product_price );
 		return $price_options ? $product_price + $price_options : $product_price;
 	}
 
 	public static function get_cart_subtotal_default() {
-		$subtotal      = 0;
+		$subtotal = 0;
+		if ( ! WC()->cart ) {
+			return $subtotal;
+		}
 		$cart_contents = WC()->cart->get_cart_contents();
+		if ( ! $cart_contents ) {
+			return $subtotal;
+		}
 		foreach ( $cart_contents  as $cart_item ) {
 			$product_price = self::get_product_price_default_by_cart_item( $cart_item );
 			$product_price = floatval( $product_price );
@@ -138,11 +280,6 @@ class SupportHelper {
 		return $subtotal;
 	}
 
-	public static function get_cart_total_default( $apply_currency ) {
-		$total = apply_filters( 'yay_currency_get_cart_total_default', 0, $apply_currency );
-		return $total;
-	}
-
 	public static function calculate_discount_from() {
 		if ( defined( 'WDR_VERSION' ) && class_exists( '\Wdr\App\Controllers\DiscountCalculator' ) ) {
 			$calculate_discount_from = \Wdr\App\Controllers\DiscountCalculator::$config->getConfig( 'calculate_discount_from', 'sale_price' );
@@ -153,7 +290,7 @@ class SupportHelper {
 	}
 
 	public static function woo_discount_rules_active() {
-		return apply_filters( 'yay_currency_active_woo_discount_rules', false );
+		return apply_filters( 'YayCurrency/WooDiscountRules/Active', false );
 	}
 
 	public static function get_original_price_apply_discount_pro( $product_id ) {
@@ -170,6 +307,9 @@ class SupportHelper {
 
 		$total_quantity = 0;
 
+		if ( ! WC()->cart ) {
+			return $total_quantity;
+		}
 		$cart_contents = WC()->cart->get_cart_contents();
 
 		if ( $cart_contents ) {
@@ -185,7 +325,10 @@ class SupportHelper {
 
 	public static function get_total_coupons( $cart_subtotal = 0, $apply_currency = false ) {
 		$total_coupon_applies = 0;
-		$applied_coupons      = WC()->cart->applied_coupons;
+		if ( ! WC()->cart ) {
+			return $total_coupon_applies;
+		}
+		$applied_coupons = WC()->cart->applied_coupons;
 		if ( $applied_coupons ) {
 			foreach ( $applied_coupons  as $coupon_code ) {
 				$coupon          = new \WC_Coupon( $coupon_code );
@@ -199,15 +342,15 @@ class SupportHelper {
 						$discount_amount *= self::get_product_quantity_item_qty( true );
 					}
 
-					if ( apply_filters( 'yay_currency_incl_tax_enable', false ) ) {
+					if ( apply_filters( 'YayCurrency/InclTax/Enable', false ) ) {
 						$discount_totals     = WC()->cart->get_coupon_discount_totals();
 						$discount_tax_totals = WC()->cart->get_coupon_discount_tax_totals();
 						$discount_totals     = wc_array_merge_recursive_numeric( $discount_totals, $discount_tax_totals );
 						$discount_amount     = $discount_totals[ $coupon->get_code() ];
 					}
 
-					if ( apply_filters( 'yay_currency_excl_tax_enable', false ) ) {
-						$tax_rate_percent = apply_filters( 'yay_currency_get_rate_percent_in_cart', false );
+					if ( apply_filters( 'YayCurrency/ExclTax/Enable', false ) ) {
+						$tax_rate_percent = apply_filters( 'YayCurrency/Tax/InCart/GetRatePercent', false );
 						if ( $tax_rate_percent ) {
 							$discount_amount = $discount_amount / ( 1 + $tax_rate_percent );
 						}
@@ -257,14 +400,14 @@ class SupportHelper {
 						if ( ! $calculate_default ) {
 							$args = array(
 								'qty'  => self::get_product_quantity_item_qty(),
-								'cost' => apply_filters( 'yay_currency_get_cart_subtotal', 0, $apply_currency ),
+								'cost' => apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotal', 0, $apply_currency ),
 							);
 							$flag = self::evaluate_cost( $cost, $args );
 
 						} else {
 							$args = array(
 								'qty'  => self::get_product_quantity_item_qty(),
-								'cost' => apply_filters( 'yay_currency_get_cart_subtotal_default', 0 ),
+								'cost' => apply_filters( 'YayCurrency/StoreCurrency/GetCartSubtotal', 0 ),
 							);
 							$flag = self::evaluate_cost( $cost, $args, true );
 						}
@@ -294,6 +437,8 @@ class SupportHelper {
 			$sum = str_replace( '[yaycurrency-fee-default', '[yaycurrency-fee', $sum );
 			$sum = str_replace( '[fee', '[yaycurrency-fee', $sum );
 		}
+
+		YayCurrencyHelper::$evaluate_line_subtotal = $args['cost'];
 
 		$sum = do_shortcode(
 			str_replace(
@@ -328,7 +473,7 @@ class SupportHelper {
 			$priority = 100000;
 		}
 
-		return apply_filters( 'yay_currency_filters_priority', $priority );
+		return apply_filters( 'yay_currency_product_prices_filters_priority', $priority );
 	}
 
 	public static function get_fee_priority( $priority = 10 ) {
@@ -352,9 +497,20 @@ class SupportHelper {
 		return apply_filters( 'yay_currency_format_filters_priority', $priority );
 	}
 
+	public static function detect_original_format_order_item_totals( $flag, $total_rows, $order, $tax_display ) {
+		if ( isset( $_GET['action'] ) && 'generate_wpo_wcpdf' === $_GET['action'] ) {
+			$flag = true;
+		}
+		return apply_filters( 'yay_currency_is_original_format_order_item_totals', $flag, $total_rows, $order, $tax_display );
+	}
+
 	public static function detect_keep_old_currency_symbol( $flag, $is_dis_checkout_diff_currency, $apply_currency ) {
 
 		if ( YayCurrencyHelper::detect_allow_hide_dropdown_currencies() ) {
+			return true;
+		}
+
+		if ( ! YayCurrencyHelper::should_run_for_request() ) {
 			return true;
 		}
 
@@ -381,6 +537,10 @@ class SupportHelper {
 	}
 
 	public static function detect_original_product_price( $flag, $price, $product ) {
+
+		if ( ! YayCurrencyHelper::should_run_for_request() ) {
+			return true;
+		}
 
 		if ( empty( $price ) || ! is_numeric( $price ) || YayCurrencyHelper::is_wc_json_products() || class_exists( 'BM' ) ) {
 			$flag = true;
@@ -428,20 +588,6 @@ class SupportHelper {
 
 	}
 
-	public static function detect_deregister_script() {
-		if ( class_exists( '\LP_Admin_Assets' ) ) {
-			wp_deregister_script( 'vue-libs' );
-		}
-		if ( defined( 'STM_MOTORS_EXTENDS_PLUGIN_VERSION' ) ) {
-			wp_deregister_script( 'vue.js' );
-		}
-		//EnvíaloSimple: Email Marketing y Newsletters plugin
-		if ( defined( 'ES_PLUGIN_URL_BASE' ) ) {
-			wp_deregister_script( 'es-vue-js' );
-		}
-		do_action( 'yay_currency_admin_deregister_script' );
-	}
-
 	public static function display_approximately_converted_price( $apply_currency ) {
 		return apply_filters( 'yay_currency_checkout_converted_approximately', true, $apply_currency );
 	}
@@ -452,53 +598,44 @@ class SupportHelper {
 
 	// WooCommerce Block support
 
-	public static function rest_api_endpoints() {
-		$endpoints = array(
-			'/wc/store/v1/batch', // Cart updates
-			'/wc/store/v1/checkout', // Checkout submission and state updates (including payment method)
-			'/wc/store/v1/cart/select-shipping-rate', // Shipping updates
-			'/wc/store/v1/cart/update-customer', // Phone, email, billing updates
-			'/wc/store/v1/checkout/update-order', // Order updates (may include payment method changes)
-		);
-
-		return apply_filters( 'yay_currency_block_rest_api_endpoints', $endpoints );
-	}
-
-	public static function detect_rest_api_doing() {
+	public static function detect_wc_store_rest_api_doing() {
 		if ( ! WC()->is_rest_api_request() ) {
 			return false;
 		}
-		$rest_route = Helper::get_rest_route_via_rest_api();
-		if ( $rest_route && in_array( $rest_route, self::rest_api_endpoints(), true ) && isset( $_REQUEST['_locale'] ) ) {
-			return true;
-		}
-		return false;
-	}
-
-	public static function detect_checkout_blocks() {
 
 		$rest_route = Helper::get_rest_route_via_rest_api();
 
-		if ( ! $rest_route ) {
-			return false;
-		}
-
-		if ( self::detect_rest_api_doing() && isset( $_COOKIE['yay_checkout_blocks_page'] ) ) {
-			return true;
-		}
-
-		return false;
+		return $rest_route && strpos( $rest_route, '/wc/store/' ) === 0;
 	}
 
 	public static function is_checkout_blocks() {
 
-		$flag = false;
-
-		if ( self::detect_checkout_blocks() ) {
-			$flag = true;
+		// Return false if not rest api request
+		if ( ! self::detect_wc_store_rest_api_doing() ) {
+			return false;
 		}
 
-		return apply_filters( 'yay_currency_is_checkout_blocks', $flag );
+		// Return true if force country by checkout blocks page
+		if ( 'checkout' === self::get_wc_blocks_page_context() ) {
+			return true;
+		}
+
+		return apply_filters( 'YayCurrency/WooBlocks/IsCheckout', false );
+
+	}
+
+	public static function get_wc_blocks_page_context() {
+		$page_context = '';
+
+		if ( ! self::detect_wc_store_rest_api_doing() ) {
+			return $page_context;
+		}
+
+		if ( isset( $_SERVER['HTTP_YAYCURRENCY_WC_BLOCKS_CONTEXT'] ) ) {
+			$page_context = sanitize_text_field( $_SERVER['HTTP_YAYCURRENCY_WC_BLOCKS_CONTEXT'] );
+		}
+
+		return $page_context;
 
 	}
 }

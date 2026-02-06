@@ -212,7 +212,7 @@
                     $(this).addClass(switcher_args.selectedClass);
 
                     clickedSwitcher.find(switcher_args.currencySelectedFlag).css({
-                        background: `url(${yayCurrency.yayCurrencyPluginURL}assets/dist/flags/${countryCode}.svg)`,
+                        background: `url(${yayCurrency.yayCurrencyPluginURL}assets/flags/${countryCode}.svg)`,
                     });
 
                     clickedSwitcher.find(switcher_args.selectedOption).text($(this).text());

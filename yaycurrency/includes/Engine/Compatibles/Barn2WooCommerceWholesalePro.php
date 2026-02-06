@@ -37,17 +37,17 @@ class Barn2WooCommerceWholesalePro {
 		}
 
 		// Recalculate
-		add_filter( 'yay_currency_get_product_pricing', array( $this, 'custom_get_product_price' ), 10, 2 );
-		add_filter( 'yay_currency_get_category_pricing', array( $this, 'custom_get_category_product_price' ), 10, 2 );
-		add_filter( 'yay_currency_get_global_pricing', array( $this, 'custom_get_global_product_price' ), 10, 2 );
+		add_filter( 'YayCurrency/Barn2/GetProductPricing', array( $this, 'custom_get_product_price' ), 10, 2 );
+		add_filter( 'YayCurrency/Barn2/GetCategoryPricing', array( $this, 'custom_get_category_product_price' ), 10, 2 );
+		add_filter( 'YayCurrency/Barn2/GetGlobalPricing', array( $this, 'custom_get_global_product_price' ), 10, 2 );
 
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 
 		if ( function_exists( 'Barn2\Plugin\Discount_Manager\wdm' ) ) {
 			$this->wdm_plugin = true;
 			add_filter( 'yay_currency_before_calculate_totals_ignore_price_conversion', array( $this, 'before_calculate_totals_ignore_price_conversion' ), 10, 3 );
 			if ( class_exists( 'Barn2\Plugin\Discount_Manager\Integrations\Product_Options' ) ) {
-				add_filter( 'yay_currency_get_product_price_default_by_cart_item', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
+				add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
 				add_filter( 'woocommerce_cart_item_price', array( $this, 'display_discounted_price_in_cart' ), 999, 3 );
 
 				if ( YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency ) ) {
@@ -146,15 +146,15 @@ class Barn2WooCommerceWholesalePro {
 
 	public function calculate_product_price( $product, $role ) {
 
-		$product_price = apply_filters( 'yay_currency_get_product_pricing', $product, $role );
+		$product_price = apply_filters( 'YayCurrency/Barn2/GetProductPricing', $product, $role );
 		if ( is_numeric( $product_price ) ) {
 			return $product_price;
 		} else {
-			$category_price = apply_filters( 'yay_currency_get_category_pricing', $product, $role );
+			$category_price = apply_filters( 'YayCurrency/Barn2/GetCategoryPricing', $product, $role );
 			if ( is_numeric( $category_price ) ) {
 				return $category_price;
 			} else {
-				$global_price = apply_filters( 'yay_currency_get_global_pricing', $product, $role );
+				$global_price = apply_filters( 'YayCurrency/Barn2/GetGlobalPricing', $product, $role );
 				if ( is_numeric( $global_price ) ) {
 					return $global_price;
 				}

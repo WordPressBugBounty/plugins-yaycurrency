@@ -221,7 +221,7 @@ class LearnPress {
 	// LearnPress - WooCommerce Payment Methods Integration
 
 	public function get_woo_course_price_custom( $price, $course ) {
-		if ( apply_filters( 'yay_currency_learn_press_default_course_price', false ) || YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) ) {
+		if ( apply_filters( 'YayCurrency/LearnPress/StoreCurrency/CoursePrice/IsDefault', false ) || YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency ) ) {
 			return $price;
 		}
 		$price = apply_filters( 'yay_currency_convert_price', $price, $this->apply_currency );

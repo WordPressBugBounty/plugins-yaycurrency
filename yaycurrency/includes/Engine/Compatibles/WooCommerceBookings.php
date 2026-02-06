@@ -38,8 +38,8 @@ class WooCommerceBookings {
 
 		// Define filter get price default (when disable Checkout in different currency option)
 
-		add_filter( 'yay_currency_get_product_price_default_by_cart_item', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
+		add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_default_by_cart_item' ), 10, 2 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_product_price_by_cart_item' ), 10, 3 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 20, 2 );
 
 		// Checkout & Order
@@ -47,8 +47,8 @@ class WooCommerceBookings {
 		add_filter( 'yay_currency_is_original_default_currency', array( $this, 'is_original_default_currency' ), 10, 3 );
 		add_filter( 'yay_currency_woocommerce_currency', array( $this, 'convert_to_default_currency' ), 20, 2 );
 		add_filter( 'yay_currency_use_default_default_currency_symbol', array( $this, 'use_default_default_currency_symbol' ), 20, 3 );
-		add_filter( 'yay_currency_3rd_plugins_conditions', array( $this, 'detect_3rd_plugins_conditions' ), 20, 3 );
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_fallback_in_checkout_page' ), 10, 3 );
+		add_filter( 'YayCurrency/Detect/AllowGetPriceByConditions', array( $this, 'detect_3rd_plugins_conditions' ), 20, 3 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_fallback_in_checkout_page' ), 10, 3 );
 
 	}
 
@@ -214,7 +214,7 @@ class WooCommerceBookings {
 
 	public function detect_3rd_plugins_conditions( $flag, $product, $apply_currency ) {
 
-		if ( SupportHelper::detect_rest_api_doing() ) {
+		if ( SupportHelper::detect_wc_store_rest_api_doing() ) {
 			$flag = true;
 		}
 
@@ -290,7 +290,7 @@ class WooCommerceBookings {
 	public function yay_currency_woocommerce_currency_symbol( $currency_symbol, $apply_currency ) {
 		if ( wp_doing_ajax() ) {
 			if ( isset( $_REQUEST['action'] ) && 'wc_bookings_calculate_costs' === $_REQUEST['action'] ) {
-				$currency_symbol = wp_kses_post( html_entity_decode( $this->apply_currency['symbol'] ) );
+				$currency_symbol = wp_kses_post( Helper::decode_html_entity( $this->apply_currency['symbol'] ) );
 			}
 		}
 		return $currency_symbol;

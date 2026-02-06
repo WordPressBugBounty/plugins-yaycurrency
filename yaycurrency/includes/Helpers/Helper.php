@@ -10,7 +10,7 @@ class Helper {
 	protected function __construct() {}
 
 	private static $YAY_CURRENCY_POST_TYPE   = 'yay-currency-manage';
-	private static $YAY_CURRENCIES_TRANSIENT = 'yay-currencies-transient';
+	private static $YAY_CURRENCIES_TRANSIENT = 'yay_currencies_transient';
 
 	public static function sanitize_array( $data ) {
 		if ( is_array( $data ) ) {
@@ -22,6 +22,14 @@ class Helper {
 
 	public static function sanitize( $args ) {
 		return wp_kses_post_deep( $args['data'] );
+	}
+
+	public static function decode_html_entity( $value ) {
+		return html_entity_decode(
+			$value,
+			ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401,
+			'UTF-8'
+		);
 	}
 
 	public static function is_method_executed( $class_name, $method_name ) {
@@ -57,6 +65,15 @@ class Helper {
 		return $classes;
 	}
 
+	public static function register_classes() {
+		$classes = array(
+			'RegisterFacade',
+			'RestAPI',
+		);
+
+		return $classes;
+	}
+
 	public static function backend_classes() {
 		$classes = array(
 			'WooCommerceFilterAnalytics',
@@ -84,6 +101,7 @@ class Helper {
 	public static function compatible_classes() {
 		$classes = array(
 			// PLUGINS
+			'PayTr',
 			'ThirdPartyPlugins',
 			'AdvancedProductFieldsForWooCommerce',
 			'PaymentPluginsBraintreeForWooCommerce',
@@ -94,6 +112,7 @@ class Helper {
 			'B2BKingPro',
 			'BookingsAppointmentsForWooCommercePremium',
 			'Cartflows',
+			'CheckoutWC',
 			'Dokan',
 			'EventTickets',
 			'RoleBasedPricingFoWooCommerce',
@@ -134,12 +153,17 @@ class Helper {
 			'WooCommerceTeraWallet',
 			'WooCommerceRequestAQuote',
 			'PaymentGatewayForPayPalWooCommerce',
-			'FunnelKitCart',
+			'FunnelKitAutomations',
+			'FunnelKitPlugins',
 			'TravelBooking',
 			'WooPaymentDiscounts',
+			'WCDP',
+			'WooCommerceShipit',
+			'SubscribersMembersBasedPricing',
 			//THEMES
 			'BreakdanceTheme',
 			'WoodmartTheme',
+			'WooCommerceProductOptions',
 		);
 
 		return $classes;
@@ -181,12 +205,12 @@ class Helper {
 
 	public static function default_price_num_decimals() {
 		$default_price_num_decimals = get_option( 'woocommerce_price_num_decimals' );
-		return wp_kses_post( html_entity_decode( $default_price_num_decimals ) );
+		return $default_price_num_decimals;
 	}
 
 	public static function get_yay_currencies_transient() {
 		$yay_currencies = get_transient( self::$YAY_CURRENCIES_TRANSIENT );
-		return apply_filters( 'yay_currency_transient_cache_currencies', $yay_currencies );
+		return apply_filters( 'YayCurrency/Cache/Transient/Currencies', $yay_currencies );
 	}
 
 	public static function delete_yay_currencies_transient() {
@@ -236,28 +260,27 @@ class Helper {
 
 	public static function get_flag_by_country_code( $country_code = 'us' ) {
 
-		$flag = $country_code;
+		$flag_url = YAY_CURRENCY_PLUGIN_DIR . 'assets/flags/' . $country_code . '.svg';
 
-		switch ( $country_code ) {
-			case 'byr':
-				$flag = 'by';
-				break;
-			case 'cuc':
-				$flag = 'cu';
-				break;
-			case 'irt':
-				$flag = 'ir';
-				break;
-			case 'vef':
-				$flag = 've';
-				break;
-			default:
-				break;
+		if ( file_exists( $flag_url ) ) {
+			$flag_url = YAY_CURRENCY_PLUGIN_URL . 'assets/flags/' . $country_code . '.svg';
+		} else {
+			$flag_fallbacks = self::get_flag_fallbacks_by_country_code();
+			$flag_url       = isset( $flag_fallbacks[ $country_code ] ) ? $flag_fallbacks[ $country_code ] : $flag_fallbacks['default'];
 		}
 
-		$flag_url = YAY_CURRENCY_PLUGIN_URL . 'assets/dist/flags/' . $flag . '.svg';
-
 		return apply_filters( 'yay_currency_get_flag_by_country_code', $flag_url, $country_code );
+
+	}
+
+	public static function get_flag_fallbacks_by_country_code() {
+		$flag_fallbacks = apply_filters(
+			'YayCurrency/Fallbacks/GetFlags',
+			array(
+				'default' => YAY_CURRENCY_PLUGIN_URL . 'assets/flags/default.svg',
+			)
+		);
+		return $flag_fallbacks;
 	}
 
 	public static function currency_code_by_country_code() {
@@ -371,10 +394,10 @@ class Helper {
 			'NGN' => 'ng',
 			'NIO' => 'ni',
 			'NOK' => 'no',
-			'XOF' => 'none',
-			'XPF' => 'none1',
-			'XCD' => 'none2',
-			'XAF' => 'none3',
+			'XOF' => 'xo',
+			'XPF' => 'xp',
+			'XCD' => 'xc',
+			'XAF' => 'xa',
 			'NPR' => 'np',
 			'NZD' => 'nz',
 			'OMR' => 'om',
@@ -398,6 +421,7 @@ class Helper {
 			'SGD' => 'sg',
 			'SHP' => 'sh',
 			'SLL' => 'sl',
+			'SLE' => 'sl',
 			'SOS' => 'so',
 			'SRD' => 'sr',
 			'SSP' => 'ss',
@@ -427,7 +451,7 @@ class Helper {
 			'ZAR' => 'za',
 			'ZMW' => 'zm',
 		);
-		return $countries_code;
+		return apply_filters( 'YayCurrency/Data/CountryCurrencyMaps', $countries_code );
 	}
 
 	public static function woo_list_currencies() {
@@ -446,9 +470,10 @@ class Helper {
 
 		foreach ( $currency_code_by_country_code as $key => $value ) {
 			$currency_data = array(
-				'currency'      => isset( $woo_list_currencies[ $key ] ) ? html_entity_decode( $woo_list_currencies[ $key ] ) : 'USD',
-				'currency_code' => $key,
-				'country_code'  => $value,
+				'currency'        => isset( $woo_list_currencies[ $key ] ) ? self::decode_html_entity( $woo_list_currencies[ $key ] ) : 'USD',
+				'currency_code'   => $key,
+				'currency_symbol' => self::decode_html_entity( YayCurrencyHelper::get_symbol_by_currency_code( $key ) ),
+				'country_code'    => $value,
 			);
 			if ( in_array( $key, $most_traded_currencies_code ) ) {
 				array_push( $most_traded_converted_currencies_data, $currency_data );
@@ -755,6 +780,47 @@ class Helper {
 		);
 	}
 
+	// Sync currency settings
+	public static function sync_currency_settings( $currency_id, $is_wc_settings_page = false ) {
+		// Update currency settings --- from YayCurrency Manage Currency
+		if ( ! $is_wc_settings_page ) {
+			if ( get_post_meta( $currency_id, 'currency_position', true ) ) {
+				update_option( 'woocommerce_currency_pos', get_post_meta( $currency_id, 'currency_position', true ) );
+			}
+			if ( get_post_meta( $currency_id, 'thousand_separator', true ) ) {
+				update_option( 'woocommerce_price_thousand_sep', get_post_meta( $currency_id, 'thousand_separator', true ) );
+			}
+			if ( get_post_meta( $currency_id, 'decimal_separator', true ) ) {
+				update_option( 'woocommerce_price_decimal_sep', get_post_meta( $currency_id, 'decimal_separator', true ) );
+			}
+			if ( get_post_meta( $currency_id, 'number_decimal', true ) ) {
+				update_option( 'woocommerce_price_num_decimals', get_post_meta( $currency_id, 'number_decimal', true ) );
+			}
+		} else {
+			// Update currency settings --- from WooCommerce Settings
+			if ( get_option( 'woocommerce_currency_pos' ) ) {
+				update_post_meta( $currency_id, 'currency_position', get_option( 'woocommerce_currency_pos' ) );
+			}
+			if ( get_option( 'woocommerce_price_thousand_sep' ) ) {
+				update_post_meta( $currency_id, 'thousand_separator', get_option( 'woocommerce_price_thousand_sep' ) );
+			}
+			if ( get_option( 'woocommerce_price_decimal_sep' ) ) {
+				update_post_meta( $currency_id, 'decimal_separator', get_option( 'woocommerce_price_decimal_sep' ) );
+			}
+			if ( get_option( 'woocommerce_price_num_decimals' ) ) {
+				update_post_meta( $currency_id, 'number_decimal', get_option( 'woocommerce_price_num_decimals' ) );
+			}
+		}
+
+	}
+
+	// Check if the currency code exists in the list of currencies
+	public static function check_currency_code_exists( $currencies, $currency_code ) {
+		$currency_codes = array_column( $currencies, 'post_title' );
+		return in_array( $currency_code, $currency_codes, true );
+	}
+
+	// Convert currencies
 	public static function converted_currencies( $currencies = array() ) {
 		$converted_currencies = array();
 		foreach ( $currencies as $currency ) {
@@ -762,30 +828,32 @@ class Helper {
 			if ( ! $currency_meta ) {
 				continue;
 			}
-			$currency_code_position = isset( $currency_meta['currency_code_position'] ) && ! empty( $currency_meta['currency_code_position'][0] ) ? $currency_meta['currency_code_position'][0] : 'not_display';
-			$converted_currency     = array(
-				'ID'                   => $currency->ID,
-				'currency'             => $currency->post_title,
-				'currencySymbol'       => html_entity_decode( get_woocommerce_currency_symbol( $currency->post_title ) ),
-				'currencyPosition'     => $currency_meta['currency_position'][0],
-				'currencyCodePosition' => $currency_code_position,
-				'thousandSeparator'    => $currency_meta['thousand_separator'][0],
-				'decimalSeparator'     => $currency_meta['decimal_separator'][0],
-				'numberDecimal'        => $currency_meta['number_decimal'][0],
-				'rate'                 =>
+			$currency_symbol    = self::decode_html_entity( get_woocommerce_currency_symbol( $currency->post_title ) );
+			$converted_currency = array(
+				'ID'                => $currency->ID,
+				'currency'          => $currency->post_title,
+				'currencySymbol'    => $currency_symbol,
+				'currencyPosition'  => isset( $currency_meta['currency_position'][0] ) ? $currency_meta['currency_position'][0] : 'left',
+				'thousandSeparator' => isset( $currency_meta['thousand_separator'][0] ) ? $currency_meta['thousand_separator'][0] : ',',
+				'decimalSeparator'  => isset( $currency_meta['decimal_separator'] ) ? $currency_meta['decimal_separator'][0] : '.',
+				'numberDecimal'     => isset( $currency_meta['number_decimal'] ) ? $currency_meta['number_decimal'][0] : '0',
+				'rate'              =>
 					array(
 						'type'  => $currency_meta['rate_type'] && ! empty( $currency_meta['rate_type'][0] ) ? $currency_meta['rate_type'][0] : 'auto',
-						'value' => $currency_meta['rate'][0],
+						'value' => isset( $currency_meta['rate'] ) ? $currency_meta['rate'][0] : '1',
 					),
-				'fee'                  => maybe_unserialize( $currency_meta['fee'][0] ),
-				'status'               => $currency_meta['status'][0],
-				'paymentMethods'       => maybe_unserialize( $currency_meta['payment_methods'][0] ),
-				'countries'            => maybe_unserialize( $currency_meta['countries'][0] ),
-				'default'              => self::default_currency_code() === $currency->post_title ? true : false,
-				'isLoading'            => false,
-				'roundingType'         => $currency_meta['rounding_type'][0] ? $currency_meta['rounding_type'][0] : 'disabled',
-				'roundingValue'        => $currency_meta['rounding_value'][0] ? $currency_meta['rounding_value'][0] : 1,
-				'subtractAmount'       => $currency_meta['subtract_amount'][0] ? $currency_meta['subtract_amount'][0] : 0,
+				'fee'               => isset( $currency_meta['fee'] ) ? maybe_unserialize( $currency_meta['fee'][0] ) : array(
+					'value' => '0',
+					'type'  => 'fixed',
+				),
+				'status'            => $currency_meta['status'][0],
+				'paymentMethods'    => maybe_unserialize( $currency_meta['payment_methods'][0] ),
+				'countries'         => maybe_unserialize( $currency_meta['countries'][0] ),
+				'default'           => self::default_currency_code() === $currency->post_title ? true : false,
+				'isLoading'         => false,
+				'roundingType'      => $currency_meta['rounding_type'][0] ? $currency_meta['rounding_type'][0] : 'disabled',
+				'roundingValue'     => $currency_meta['rounding_value'][0] ? $currency_meta['rounding_value'][0] : '1',
+				'subtractAmount'    => $currency_meta['subtract_amount'][0] ? $currency_meta['subtract_amount'][0] : '0',
 			);
 			array_push( $converted_currencies, $converted_currency );
 		}
@@ -798,7 +866,7 @@ class Helper {
 		$symbol               = get_woocommerce_currency_symbol( $currentCurrency );
 		$default_currency     = array(
 			'currency'             => $currentCurrency,
-			'currencySymbol'       => html_entity_decode( $symbol ),
+			'currencySymbol'       => self::decode_html_entity( $symbol ),
 			'currencyPosition'     => $woo_current_settings['currencyPosition'],
 			'currencyCodePosition' => 'not_display',
 			'thousandSeparator'    => $woo_current_settings['thousandSeparator'],
@@ -855,6 +923,38 @@ class Helper {
 			}
 			self::update_post_meta_currency( $new_currency_ID );
 		}
+	}
+
+	public static function update_currency_menu_order( $list_currencies = array(), $currency_code = '' ) {
+
+		// Validate input
+		if ( empty( $list_currencies ) || empty( $currency_code ) ) {
+			return false;
+		}
+
+		$new_menu_order = 1;
+
+		foreach ( $list_currencies as $currency ) {
+			// Validate currency object
+			if ( ! isset( $currency->ID, $currency->post_title ) ) {
+				continue;
+			}
+
+			$is_target_currency = $currency->post_title === $currency_code;
+			// Update currency post
+			wp_update_post(
+				[
+					'ID'         => $currency->ID,
+					'post_title' => $is_target_currency ? $currency_code : $currency->post_title,
+					'menu_order' => $is_target_currency ? 0 : $new_menu_order,
+				]
+			);
+
+			if ( ! $is_target_currency ) {
+				++$new_menu_order;
+			}
+		}
+
 	}
 
 	public static function update_post_meta_currency( $currency_id = 0, $currency = false ) {
@@ -946,19 +1046,11 @@ class Helper {
 	}
 
 	public static function get_rest_route_via_rest_api() {
-		$query_vars = isset( $GLOBALS['wp']->query_vars ) && ! empty( $GLOBALS['wp']->query_vars ) ? $GLOBALS['wp']->query_vars : false;
-
-		if ( ! $query_vars || ! isset( $query_vars['rest_route'] ) ) {
+		if ( ! isset( $GLOBALS['wp']->query_vars['rest_route'] ) || empty( $GLOBALS['wp']->query_vars['rest_route'] ) ) {
 			return false;
 		}
 
-		$rest_route = ! empty( $query_vars['rest_route'] ) ? $query_vars['rest_route'] : false;
-
-		if ( ! $rest_route ) {
-			return false;
-		}
-
-		return $rest_route;
+		return $GLOBALS['wp']->query_vars['rest_route'];
 	}
 
 	public static function change_existing_currency_symbol( $apply_currency = array(), $currency_symbol = '' ) {
@@ -966,7 +1058,7 @@ class Helper {
 			return $currency_symbol;
 		}
 		$currency_symbol = isset( $apply_currency['symbol'] ) ? $apply_currency['symbol'] : $currency_symbol;
-		return wp_kses_post( html_entity_decode( $currency_symbol ) );
+		return wp_kses_post( self::decode_html_entity( $currency_symbol ) );
 	}
 
 	public static function change_currency_position( $apply_currency = array() ) {
@@ -987,7 +1079,7 @@ class Helper {
 
 		$thousand_separator = $apply_currency['thousandSeparator'];
 
-		return apply_filters( 'yay_currency_custom_thousand_separator', $thousand_separator, $apply_currency );
+		return apply_filters( 'YayCurrency/GetThousandSeparator', $thousand_separator, $apply_currency );
 
 	}
 
@@ -1003,7 +1095,7 @@ class Helper {
 
 		$decimal_separator = $apply_currency['decimalSeparator'];
 
-		return apply_filters( 'yay_currency_custom_decimal_separator', $decimal_separator, $apply_currency );
+		return apply_filters( 'YayCurrency/GetDecimalSeparator', $decimal_separator, $apply_currency );
 	}
 
 	public static function change_number_decimals( $apply_currency = array() ) {
@@ -1017,7 +1109,7 @@ class Helper {
 
 		$number_decimal = $apply_currency['numberDecimal'];
 
-		return apply_filters( 'yay_currency_custom_number_decimal', $number_decimal, $apply_currency );
+		return apply_filters( 'YayCurrency/GetNumberDecimal', $number_decimal, $apply_currency );
 
 	}
 

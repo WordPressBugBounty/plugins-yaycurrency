@@ -26,11 +26,11 @@ class YayExtra {
 
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
 
-		add_filter( 'yay_currency_get_price_options_by_cart_item', array( $this, 'get_price_options_by_cart_item' ), 10, 5 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_options_by_cart_item' ), 10, 5 );
 		// Define filter get price default (when disable Checkout in different currency option)
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );
-		add_filter( 'yay_currency_get_product_price_by_3rd_plugin', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ThirdPlugins/GetProductPrice', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
 		if ( YayCurrencyHelper::enable_rounding_currency( $this->apply_currency ) ) {
 			add_filter( 'yaye_option_cost_display_orders_and_emails', array( $this, 'yaye_option_cost_display_cart_checkout' ), 10, 5 );
 			// Change Option Cost again with type is percentage
@@ -184,7 +184,7 @@ class YayExtra {
 		if ( wp_doing_ajax() && $ajax_flag ) {
 			$product_price = $cart_item['data']->get_price( 'edit' );
 			$product_price = YayCurrencyHelper::calculate_price_by_currency( $product_price, false, $this->apply_currency );
-			$product_price = apply_filters( 'yay_currency_get_product_price_by_cart_item', $product_price, $cart_item, $this->apply_currency );
+			$product_price = apply_filters( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', $product_price, $cart_item, $this->apply_currency );
 			$price         = YayCurrencyHelper::format_price( $product_price );
 		}
 		return $price;
@@ -193,7 +193,7 @@ class YayExtra {
 	public function woocommerce_cart_subtotal( $cart_subtotal, $compound, $cart ) {
 		$ajax_flag = ( isset( $_REQUEST['action'] ) && 'elementor_menu_cart_fragments' === $_REQUEST['action'] ) || ( isset( $_REQUEST['wc-ajax'] ) && 'get_refreshed_fragments' === $_REQUEST['wc-ajax'] );
 		if ( wp_doing_ajax() && $ajax_flag ) {
-			$subtotal      = apply_filters( 'yay_currency_get_cart_subtotal', 0, $this->apply_currency );
+			$subtotal      = apply_filters( 'YayCurrency/ApplyCurrency/GetCartSubtotal', 0, $this->apply_currency );
 			$cart_subtotal = YayCurrencyHelper::format_price( $subtotal );
 		}
 		return $cart_subtotal;

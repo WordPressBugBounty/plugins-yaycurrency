@@ -4,15 +4,16 @@
  * Plugin Name:       YayCurrency
  * Plugin URI:        https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/
  * Description:       Provide multiple currencies for WooCommerce. Let your potential customers switch currency on the go.
- * Version:           3.2
+ * Version:           3.3.3
  * Author:            YayCommerce
  * Author URI:        https://yaycommerce.com
  * Text Domain:       yay-currency
  * Domain Path:       /languages
  * Requires at least: 4.7
- * Requires PHP:      5.4
+ * Tested up to: 6.9
+ * Requires PHP: 5.4
  * WC requires at least: 3.0.0
- * WC tested up to: 9.8.4
+ * WC tested up to: 10.4.3
  *
  * @package yaycommerce/yaycurrency
  */
@@ -36,7 +37,7 @@ if ( ! defined( 'YAY_CURRENCY_FILE' ) ) {
 }
 
 if ( ! defined( 'YAY_CURRENCY_VERSION' ) ) {
-	define( 'YAY_CURRENCY_VERSION', '3.2' );
+	define( 'YAY_CURRENCY_VERSION', '3.3.3' );
 }
 
 if ( ! defined( 'YAY_CURRENCY_PLUGIN_URL' ) ) {
@@ -50,6 +51,7 @@ if ( ! defined( 'YAY_CURRENCY_PLUGIN_DIR' ) ) {
 if ( ! defined( 'YAY_CURRENCY_BASE_NAME' ) ) {
 	define( 'YAY_CURRENCY_BASE_NAME', plugin_basename( __FILE__ ) );
 }
+
 
 spl_autoload_register(
 	function ( $class ) {

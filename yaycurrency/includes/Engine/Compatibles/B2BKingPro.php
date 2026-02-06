@@ -20,7 +20,7 @@ class B2BKingPro {
 		}
 
 		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'custom_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'custom_price_default_in_checkout_page' ), 10, 2 );
 		add_filter( 'yay_currency_get_price_by_currency', array( $this, 'custom_price_by_currency' ), 10, 3 );
 	}
 

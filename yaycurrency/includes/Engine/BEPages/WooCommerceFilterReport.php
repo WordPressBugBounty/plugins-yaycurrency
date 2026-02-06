@@ -38,7 +38,7 @@ class WooCommerceFilterReport {
 			<select class="widget-currencies-dropdown" name='currency'>
 				<?php foreach ( $apply_currencies as $currency ) { ?>
 					<option data-url="<?php echo esc_url( add_query_arg( array( 'currency' => $currency->post_title ), $current_url ) ); ?>" value='<?php echo esc_attr__( $currency->post_title, 'yay-currency' ); ?>'>
-						<?php echo wp_kses_post( html_entity_decode( esc_html__( $all_currencies[ $currency->post_title ], 'yay-currency' ) . ' (' . YayCurrencyHelper::get_symbol_by_currency( $currency->post_title, $converted_currency ) . ') - ' . esc_html( $currency->post_title ) ) ); ?>
+						<?php echo wp_kses_post( Helper::decode_html_entity( esc_html__( $all_currencies[ $currency->post_title ], 'yay-currency' ) . ' (' . YayCurrencyHelper::get_symbol_by_currency( $currency->post_title, $converted_currency ) . ') - ' . esc_html( $currency->post_title ) ) ); ?>
 					</option>
 				<?php } ?>
 			</select>
@@ -52,7 +52,7 @@ class WooCommerceFilterReport {
 
 		$currency = isset( $_GET['currency'] ) ? sanitize_text_field( $_GET['currency'] ) : Helper::default_currency_code();
 
-		$currency = apply_filters( 'yay_currency_report_query_by_currency', $currency );
+		$currency = apply_filters( 'YayCurrency/Admin/ReportQuery/GetCurrencyCode', $currency );
 
 		$pattern = '/^[a-zA-Z]{3}+$/';
 

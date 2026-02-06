@@ -37,9 +37,9 @@ class WooCommerceSubscriptions {
 
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
 
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_cart_item_price_3rd_plugin' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_cart_item_price_3rd_plugin' ), 10, 3 );
 
 		add_filter( 'woocommerce_subscriptions_product_sign_up_fee', array( $this, 'custom_subscription_sign_up_fee' ), 10, 2 );
 		add_filter( 'woocommerce_subscriptions_product_price_string', array( $this, 'custom_subscription_price_string' ), 10, 3 );
@@ -350,9 +350,9 @@ class WooCommerceSubscriptions {
 				continue;
 			}
 			$price_options = SupportHelper::get_price_options_by_3rd_plugin( $product );
-			remove_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_cart_item_price_3rd_plugin' ), 10, 3 );
+			remove_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_cart_item_price_3rd_plugin' ), 10, 3 );
 			$product_price = YayCurrencyHelper::calculate_price_by_currency( $product->get_price( 'edit' ), false, $apply_currency ) + $price_options;
-			$product_price = apply_filters( 'yay_currency_get_product_price_by_cart_item', $product_price, $cart_item, $apply_currency );
+			$product_price = apply_filters( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', $product_price, $cart_item, $apply_currency );
 			$subtotal      = $subtotal + $product_price * $cart_item['quantity'];
 		}
 
@@ -493,7 +493,7 @@ class WooCommerceSubscriptions {
 			$order_id = intval( $order_id );
 			if ( $order_id ) {
 				$order_currency = YayCurrencyHelper::get_order_currency_by_order_id( $order_id );
-				return isset( $order_currency['symbol'] ) ? wp_kses_post( html_entity_decode( $order_currency['symbol'] ) ) : $currency_symbol;
+				return isset( $order_currency['symbol'] ) ? wp_kses_post( Helper::decode_html_entity( $order_currency['symbol'] ) ) : $currency_symbol;
 			}
 		}
 		return $currency_symbol;
@@ -536,14 +536,14 @@ class WooCommerceSubscriptions {
 				return;
 			}
 
-			do_action( 'yay_currency_handle_manual_order_line_items', $order, $apply_currency, $this->parent_rate_fee );
-			do_action( 'yay_currency_handle_manual_order_fee_lines', $order, $apply_currency, $this->parent_rate_fee );
-			do_action( 'yay_currency_handle_manual_order_shipping_lines', $order, $apply_currency, $this->parent_rate_fee );
-			do_action( 'yay_currency_handle_manual_order_tax_lines', $order, $apply_currency, $this->parent_rate_fee );
-			do_action( 'yay_currency_handle_manual_order_coupon_lines', $order, $apply_currency, $this->parent_rate_fee );
-			do_action( 'yay_currency_handle_manual_order_totals', $order, $apply_currency, $this->parent_rate_fee );
+			do_action( 'YayCurrency/ManualOrder/LineItems', $order, $apply_currency, $this->parent_rate_fee );
+			do_action( 'YayCurrency/ManualOrder/FeeLines', $order, $apply_currency, $this->parent_rate_fee );
+			do_action( 'YayCurrency/ManualOrder/ShippingLines', $order, $apply_currency, $this->parent_rate_fee );
+			do_action( 'YayCurrency/ManualOrder/TaxLines', $order, $apply_currency, $this->parent_rate_fee );
+			do_action( 'YayCurrency/ManualOrder/CouponLines', $order, $apply_currency, $this->parent_rate_fee );
+			do_action( 'YayCurrency/ManualOrder/Totals', $order, $apply_currency, $this->parent_rate_fee );
 
-			do_action( 'yay_currency_handle_manual_set_order_data', $order, $new_rate_fee, $currency_code );
+			do_action( 'YayCurrency/ManualOrder/SetOrderData', $order, $new_rate_fee, $currency_code );
 
 		}
 

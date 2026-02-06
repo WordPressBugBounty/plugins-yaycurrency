@@ -2,8 +2,8 @@
 use Yay_Currency\Helpers\Helper;
 use Yay_Currency\Helpers\YayCurrencyHelper;
 $woo_currencies       = Helper::woo_list_currencies();
-$selected_currencies  = apply_filters( 'yay_currency_get_currencies_posts', Helper::get_currencies_post_type() );
-$selected_currency_id = apply_filters( 'yay_currency_get_id_selected_currency', YayCurrencyHelper::get_id_selected_currency() );
+$selected_currencies  = apply_filters( 'YayCurrency/PostType/GetCurrencies', Helper::get_currencies_post_type() );
+$selected_currency_id = apply_filters( 'YayCurrency/SelectedCurrency/GetId', YayCurrencyHelper::get_id_selected_currency() );
 $default_currency     = Helper::default_currency_code();
 $heading              = ! empty( $atts['heading'] ) ? $atts['heading'] : __( 'Currency converter', 'yay-currency' );
 if ( ! empty( $atts['hide_heading'] ) && 'yes' === $atts['hide_heading'] ) {

@@ -39,15 +39,15 @@ class YITHWooCommerceAddOnsExtraPremiumOptions {
 		add_filter( 'yith_wapo_get_addon_price', array( $this, 'custom_yith_wapo_get_addon_price' ), 10, 5 );
 		add_filter( 'yith_wapo_get_addon_sale_price', array( $this, 'custom_yith_wapo_get_addon_price' ), 10, 5 );
 
-		add_filter( 'yay_currency_get_price_default_in_checkout_page', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
-		add_filter( 'yay_currency_get_price_options_by_cart_item', array( $this, 'get_price_options_by_cart_item' ), 10, 5 );
-		add_filter( 'yay_currency_get_cart_subtotal_3rd_plugin', array( $this, 'get_cart_subtotal_3rd_plugin' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_options_by_cart_item' ), 10, 5 );
+		add_filter( 'YayCurrency/ApplyCurrency/ThirdPlugins/GetCartSubtotal', array( $this, 'get_cart_subtotal_3rd_plugin' ), 10, 2 );
 
 		add_filter( 'yith_wapo_addon_prices_on_cart', array( $this, 'yith_wapo_addon_prices_on_cart' ), 10, 1 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );
 
-		add_filter( 'yay_currency_price_options', array( $this, 'get_price_options' ), 10, 2 );
-		add_filter( 'yay_currency_price_options_default', array( $this, 'get_price_options_default' ), 10, 2 );
+		add_filter( 'YayCurrency/ApplyCurrency/GetPriceOptions', array( $this, 'get_price_options' ), 10, 2 );
+		add_filter( 'YayCurrency/StoreCurrency/GetPriceOptions', array( $this, 'get_price_options_default' ), 10, 2 );
 	}
 
 	public function init() {

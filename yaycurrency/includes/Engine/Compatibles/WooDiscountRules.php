@@ -22,10 +22,10 @@ class WooDiscountRules {
 		}
 		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
 
-		add_filter( 'yay_currency_get_product_price_by_3rd_plugin', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
-		add_filter( 'yay_currency_get_product_price_by_cart_item', array( $this, 'get_cart_item_price_3rd_plugin' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ThirdPlugins/GetProductPrice', array( $this, 'get_product_price_by_3rd_plugin' ), 10, 3 );
+		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetProductPrice', array( $this, 'get_cart_item_price_3rd_plugin' ), 10, 3 );
 
-		add_filter( 'yay_currency_active_woo_discount_rules', array( $this, 'active_woo_discount_rules' ), 10, 1 );
+		add_filter( 'YayCurrency/WooDiscountRules/Active', array( $this, 'active_woo_discount_rules' ), 10, 1 );
 
 		add_filter( 'advanced_woo_discount_rules_discounted_price_of_cart_item', array( $this, 'convert_price_apply_rules_discounted' ), 9999, 4 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );

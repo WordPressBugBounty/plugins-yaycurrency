@@ -58,6 +58,7 @@ class TranslatePressMultilingual {
 			'RON' => '&#x6c;&#x65;&#x69;',
 			'RWF' => '&#x46;&#x72;',
 			'SLL' => '&#x4c;&#x65;',
+			'SLE' => '&#x4c;&#x65;',
 			'SOS' => '&#x53;&#x68;',
 			'STN' => '&#x44;&#x62;',
 			'SZL' => '&#x45;',
