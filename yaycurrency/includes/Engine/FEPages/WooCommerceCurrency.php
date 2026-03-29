@@ -736,10 +736,10 @@ class WooCommerceCurrency {
 								$shipping_classes_cost = $class_cost > $shipping_classes_cost ? $class_cost : $shipping_classes_cost;
 							}
 						}
+					}
 
-						if ( 'order' === $shipping->type && $shipping_classes_cost ) {
-							$rate['cost'] += $shipping_classes_cost;
-						}
+					if ( 'order' === $shipping->type && $shipping_classes_cost ) {
+						$rate_class_cost += $shipping_classes_cost;
 					}
 				}
 

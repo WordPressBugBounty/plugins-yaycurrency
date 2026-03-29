@@ -244,8 +244,12 @@ class SupportHelper {
 		foreach ( $cart_contents  as $cart_item ) {
 			$product = isset( $cart_item['data'] ) ? $cart_item['data'] : false;
 			if ( $product && $product->needs_shipping() ) {
-				$product_price = self::calculate_product_price_by_cart_item( $cart_item, $apply_currency );
-				$subtotal      = $subtotal + ( $product_price * $cart_item['quantity'] );
+				if ( $apply_currency ) {
+					$product_price = self::calculate_product_price_by_cart_item( $cart_item, $apply_currency );
+				} else {
+					$product_price = self::get_product_price_default_by_cart_item( $cart_item );
+				}
+				$subtotal = $subtotal + ( $product_price * $cart_item['quantity'] );
 			}
 		}
 		return $subtotal;

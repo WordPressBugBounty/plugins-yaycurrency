@@ -104,6 +104,8 @@ class Dokan {
 
 		add_filter( 'dokan_rest_prepare_withdraw_object', array( $this, 'dokan_rest_prepare_withdraw_object' ), 10, 3 );
 
+		add_filter( 'dokan_react_frontend_localized_args', array( $this, 'custom_dokan_react_frontend_localized_args' ), 10, 1 );
+		add_filter( 'dokan_rest_prepare_vendor_subscription_order', array( $this, 'custom_dokan_rest_prepare_vendor_subscription_order' ), 10, 3 );
 	}
 
 	public function allow_detect_caching( $flag ) {
@@ -1561,6 +1563,49 @@ class Dokan {
 		$data['charge']     = floatval( $data['charge'] / $rate_fee_withdraw );
 
 		$response->set_data( $data );
+
+		return $response;
+	}
+
+	public function custom_dokan_react_frontend_localized_args( $args ) {
+		$apply_currency = \Yay_Currency\Helpers\YayCurrencyHelper::detect_current_currency();
+		if ( isset( $apply_currency['symbol'] ) ) {
+			$yay_currency_symbol        = $apply_currency['symbol'];
+			$args['currency']['symbol'] = $yay_currency_symbol;
+		}
+
+		return $args;
+	}
+
+	public function custom_dokan_rest_prepare_vendor_subscription_order( $response, $item, $request ) {
+		$request_data  = $item->get_data();
+		$response_data = $response->get_data();
+
+		if ( isset( $request_data['currency'] ) && ! empty( $response_data['total'] ) ) {
+			$current_currency_apply = YayCurrencyHelper::detect_current_currency();
+			if ( ! $current_currency_apply ) {
+				return $response;
+			}
+			$order_currency_apply = YayCurrencyHelper::get_currency_by_currency_code( $request_data['currency'] );
+			if ( ! $order_currency_apply ) {
+				return $response;
+			}
+			if ( $current_currency_apply['currency'] === $order_currency_apply['currency'] ) {
+				return $response;
+			}
+
+			$response_total        = floatval( $response_data['total'] );
+			$default_currency_code = Helper::default_currency_code();
+			if ( $order_currency_apply['currency'] !== $default_currency_code ) {
+				$response_total = YayCurrencyHelper::reverse_calculate_price_by_currency( $response_total, $order_currency_apply );
+			}
+			if ( $current_currency_apply['currency'] !== $default_currency_code ) {
+				$response_total = YayCurrencyHelper::calculate_price_by_currency( $response_total, false, $current_currency_apply );
+			}
+
+			$response_data['total'] = $response_total;
+			$response->set_data( $response_data );
+		};
 
 		return $response;
 	}

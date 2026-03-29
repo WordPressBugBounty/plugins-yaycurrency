@@ -13,6 +13,8 @@ class WPCProductBundles {
 
 	private $apply_currency = array();
 
+	private $woosb_price = 0;
+
 	public function __construct() {
 
 		if ( ! defined( 'WOOSB_VERSION' ) ) {
@@ -23,7 +25,8 @@ class WPCProductBundles {
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 9999, 4 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_price_with_options' ), 10, 2 );
-
+		add_filter( 'woocommerce_cart_subtotal', array( $this, 'woocommerce_cart_subtotal' ), 10, 3 );
+		add_filter( 'woocommerce_cart_get_total', array( $this, 'woocommerce_cart_get_total' ), 999, 1 );
 	}
 
 
@@ -53,5 +56,37 @@ class WPCProductBundles {
 			return $woosb_bundle_product_price;
 		}
 		return $price;
+	}
+
+	public function woocommerce_cart_subtotal( $cart_subtotal, $compound, $cart ) {
+		$cart_contents = WC()->cart->get_cart_contents();
+		if ( count( $cart_contents ) > 0 ) {
+			$subtotal = $this->calculate_cart_subtotal( $cart_contents );
+			if ( $subtotal > 0 ) {
+				$cart_subtotal = YayCurrencyHelper::calculate_custom_price_by_currency_html( $this->apply_currency, $subtotal );
+			}
+		}
+		return $cart_subtotal;
+	}
+
+	public function calculate_cart_subtotal( $cart_contents ) {
+		$subtotal = 0;
+		foreach ( $cart_contents  as $key => $cart_item ) {
+			if ( isset( $cart_item['woosb_ids'] ) && ! isset( $cart_item['woosb_parent_id'] ) && ! empty( $cart_item['woosb_price'] ) ) {
+				$subtotal += $cart_item['woosb_price'];
+			}
+		}
+
+		if ( $subtotal > 0 ) {
+			$this->woosb_price = $subtotal;
+		}
+		return $subtotal;
+	}
+
+	public function woocommerce_cart_get_total( $total ) {
+		if ( $this->woosb_price > 0 ) {
+			$total = $this->woosb_price;
+		}
+		return $total;
 	}
 }

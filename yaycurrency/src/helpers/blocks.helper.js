@@ -260,28 +260,34 @@
                 }
             });
         },
+
         /**
         * Set header param to detect cart or checkout blocks when call REST API
         */
         setHeaderParamToDetectCartOrCheckoutBlocks: function () {
             // Override fetch
             const origFetch = window.fetch;
+
             window.fetch = function (input, init) {
+                const url = typeof input === "string" ? input : input?.url;
+
+                if (!url || !url.includes("/wc/store/v1/")) {
+                    return origFetch(input, init);
+                }
+
                 init = init || {};
                 init.headers = init.headers || {};
-                // console.log({ input })
-                const url = typeof input === "string" ? input : input.url;
-                // console.log({ url })
-                if (url && url.includes("/wc/store/v1/")) {
-                    let page = "";
-                    if (document.body.classList.contains("woocommerce-cart")) page = "cart";
-                    if (document.body.classList.contains("woocommerce-checkout")) page = "checkout";
-                    // console.log({ page });
-                    init.headers["YayCurrency-WC-Blocks-Context"] = page;
-                }
+
+                let page = "";
+                if (document.body.classList.contains("woocommerce-cart")) page = "cart";
+                if (document.body.classList.contains("woocommerce-checkout")) page = "checkout";
+
+                init.headers["YayCurrency-WC-Blocks-Context"] = page;
+
                 return origFetch(input, init);
             };
         },
+
     };
 
 })(jQuery, window);

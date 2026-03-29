@@ -144,6 +144,7 @@ class Helper {
 			'WPCFrequentlyBoughtTogetherForWooCommerce',
 			'WooCommerceProductBundles',
 			'Measurement_Price_Calculator',
+			'ModernCart',
 			'PPOM',
 			'YayExtra',
 			'WooCommerceDeposits',

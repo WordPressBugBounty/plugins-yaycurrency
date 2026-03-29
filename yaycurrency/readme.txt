@@ -3,7 +3,7 @@ Contributors: YayCommerce
 Tags: currency switcher, multi currency, woocommerce, currency, currency converter, multicurrency
 Requires at least: 3.0
 Tested up to: 6.9
-Stable tag: 3.3.3
+Stable tag: 3.3.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,19 +21,19 @@ It is a powerful yet easy-to-use WooCommerce multi-currency switcher that helps 
 
 👉 [Quick Demo](https://demo.yaycommerce.com/yaycurrency/product/cap/) 
 
-🎮 [Admin Demo](https://demo.yaycommerce.com/yaycurrency/product/cap/)
+🎮 [Admin Demo](http://demo.yaycommerce.com/try-yaycurrency/)
 
 💎 [YayCurrency Pro](https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/) 
 
 **Key Features**
 
-**Local Currency Payments** – Showing real-time converted prices across your store and checkout.
+**Local Currency Payments** - Showing real-time converted prices across your store and checkout.
 
-**Accurate Order Emails** – Order confirmation emails are sent in the customer’s selected currency, ensuring clarity and building trust.
+**Accurate Order Emails** - Order confirmation emails are sent in the customer’s selected currency, ensuring clarity and building trust.
 
 **Compatible with Cache Plugins** - Currency switching works smoothly without affecting your site speed or caching setup.
 
-**Customizable Conversion Fees & Rounding** – Adding conversion margins, applying percentage-based payment fees, and rounding prices clean, customer-friendly pricing displays.
+**Customizable Conversion Fees & Rounding** - Adding conversion margins, applying percentage-based payment fees, and rounding prices clean, customer-friendly pricing displays.
 
 **Sell Globally with Localized Pricing – No Code Needed!**
 
@@ -67,12 +67,20 @@ Even when you’re already using various widgets of chatbox, contact button, or 
 **Switchable During Checkout**
 Allow switching currency during checkout and record purchase transactions based on the local supported payment methods. In WooCommerce Orders history, you will see order values recorded in different currencies.
 
+**Choose the Geolocation Method That Fits Your Setup (PRO)**
+
+- Auto Detect: Let YayCurrency intelligently select the best available method
+- WooCommerce Geolocation: Reliable and built-in option for most stores
+- MaxMind Geolocation: Advanced accuracy with WooCommerce integration
+- IP2Location: Alternative database for precise IP-based targeting
+
 ### 🎏 COMPATIBILITY
 Using a third-party plugin? No worries, this WooCommerce multi currency free plugin can work with your favorite WooCommerce extensions:
 
 - Stripe For WooCommerce
 - WooCommerce Subscriptions
 - Product Add-Ons
+- [Dynamic Pricing & Discounts](https://yaycommerce.com/yaypricing-woocommerce-dynamic-pricing-and-discounts/)
 - Name Your Price
 - Table Rate Shipping plugin
 - WooCommerce Per Product Shipping plugin
@@ -247,6 +255,23 @@ To quickly get the answers, please attach screenshots of currently active WooCom
 5. Checkout permission for different payment methods and currencies 
 
 == Changelog ==
+= Mar 30, 2026 - Version 3.3.4 =
+- Added: Fixed shipping cost per currency feature. --- Pro version only
+- Added: Geo API option detects the country by IP. --- Pro version only
+- Added: Auto-refresh mechanism for expired REST nonces on cached sites. --- Pro version only
+- Fixed: Compatible with Dokan vendor subscription plugin.
+- Fixed: Compatible with Wallet for WooCommerce plugin latest version.
+- Fixed: Compatible with Advanced Product Fields (Product Options) for WooCommerce plugins.
+- Fixed: Compatible with Modern Cart Starter for WooCommerce plugin.
+- Fixed: Shipping cost does not work correctly when the shipping type is Order.
+- Fixed: Compatible with CTX Feed plugin latest version.
+- Fixed: Compatible with Barn2 WooCommerce Wholesale Pro plugin does not work correctly with approximate price. --- Pro version only
+- Fixed: XE API is not working. --- Pro version only
+- Updated: Tested up to WP 6.9.4
+- Updated: WC tested up to: 10.6.1
+- Improved: Update exchange rate automatically. --- Pro version only
+- Improved: Compatible with cache plugins option. --- Pro version only
+
 = Jan 22, 2026 - Version 3.3.3 =
 - Updated: Tested up to WP 6.9
 - Fixed: Shipping class cost conversion issue when checkout currency option is disabled.

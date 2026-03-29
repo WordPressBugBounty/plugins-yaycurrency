@@ -73,7 +73,15 @@ class AdvancedProductFieldsForWooCommerce {
 			$original_price  = wc_get_product( $product_id )->get_price( 'edit' );
 			$currency_price  = apply_filters( 'yay_currency_convert_price', $original_price, $apply_currency );
 
-			$options_total         = isset( $wapf_item_price['options_total'] ) ? $wapf_item_price['options_total'] : 0;
+			$options_total = 0;
+			if ( isset( $wapf_item_price['options_total'] ) ) {
+				if ( $wapf_item_price['options_total'] < 0 ) {
+					$options_total = apply_filters( 'yay_currency_revert_price', $wapf_item_price['options_total'], $apply_currency );
+				} else {
+					$options_total = $wapf_item_price['options_total'];
+				}
+			}
+
 			$options_total_convert = apply_filters( 'yay_currency_convert_price', $options_total, $apply_currency );
 
 			SupportHelper::set_cart_item_objects_property( $cart_contents[ $cart_item_key ]['data'], 'price_with_options_default', $original_price + $options_total );
