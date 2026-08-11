@@ -20,7 +20,7 @@ class Widget extends WP_Widget {
 	public $country_info;
 	public $settings_data;
 
-	protected function __construct() {
+	public function __construct() {
 
 		$cookie_name = YayCurrencyHelper::get_cookie_name();
 

@@ -35,14 +35,11 @@ class Hooks {
 		// ADD FILTER GET PRICE EXCEPT CLASS PLUGINS
 		add_filter( 'YayCurrency/Except/ThirdPlugins/GetPrice', array( $this, 'get_price_except_class_plugins' ), 10, 3 );
 
-		add_filter( 'woocommerce_stripe_request_body', array( $this, 'custom_stripe_request_total_amount' ), 10, 2 );
-
 		// Keep original fee
 		add_filter( 'yay_currency_is_cart_fees_original', array( $this, 'is_cart_fees_original' ), 10, 2 );
 
 		// Action
 		add_action( 'YayCurrency/RedirectToUrl', array( $this, 'redirect_to_url' ), 10, 2 );
-		add_action( 'YayCurrency/Admin/EnqueueScripts', array( $this, 'admin_enqueue_scripts' ) );
 
 		// RELATE WITH MANUAL ORDER
 		add_action( 'YayCurrency/ManualOrder/LineItems', array( $this, 'handle_manual_order_line_items' ), 10, 3 );
@@ -144,13 +141,15 @@ class Hooks {
 			$is_ydp_adjust_price = apply_filters( 'ydp_check_adjust_price', false );
 		}
 
+		if ( apply_filters( 'yay_currency_is_original_with_3rd_plugin', false, $price, $product ) ) {
+			return $price;
+		}
+
 		if ( class_exists( '\YayPricing\FrontEnd\ProductPricing' ) && $is_ydp_adjust_price ) {
 			return $calculate_price;
 		}
 
-		$price_3rd_plugin = apply_filters( 'yay_currency_product_price_3rd_with_condition', false, $product );
-
-		return $price_3rd_plugin;
+		return apply_filters( 'yay_currency_product_price_3rd_with_condition', false, $product );
 
 	}
 
@@ -186,41 +185,6 @@ class Hooks {
 		return false;
 	}
 
-	public function custom_stripe_request_total_amount( $request, $api ) {
-		if ( isset( $request['currency'] ) && isset( $request['metadata'] ) && isset( $request['metadata']['order_id'] ) ) {
-			$array_zero_decimal_currencies = array(
-				'BIF',
-				'CLP',
-				'DJF',
-				'GNF',
-				'JPY',
-				'KMF',
-				'KRW',
-				'MGA',
-				'PYG',
-				'RWF',
-				'UGX',
-				'VND',
-				'VUV',
-				'XAF',
-				'XOF',
-				'XPF',
-			);
-			if ( in_array( strtoupper( $request['currency'] ), $array_zero_decimal_currencies ) ) {
-				$order_id = $request['metadata']['order_id'];
-				if ( ! empty( $order_id ) ) {
-					$order = wc_get_order( $order_id );
-					if ( ! $order ) {
-						return $request;
-					}
-					$order_total       = YayCurrencyHelper::get_total_by_order( $order );
-					$request['amount'] = floatval( $order_total );
-				}
-			}
-		}
-		return $request;
-	}
-
 	public function is_cart_fees_original( $flag, $apply_currency ) {
 
 		if ( class_exists( 'Woocommerce_Conditional_Product_Fees_For_Checkout_Pro' ) || class_exists( 'TaxamoClass' ) || class_exists( 'Woo_Wallet' ) || function_exists( 'WholeSale_Discount_Based_on_CartTotal' ) ) {
@@ -250,27 +214,6 @@ class Hooks {
 			}
 		}
 		return apply_filters( 'YayCurrency/Checkout/PaymentMethods/GetNoticeHtml', $notice_html, $currencies_data, $current_theme );
-	}
-
-	public function admin_enqueue_scripts() {
-
-		$sync_notice_args = array(
-			'reverted'      => get_option( 'yay_currency_orders_synced_to_base', 'no' ),
-			'notice_title'  => __( 'YayCurrency database update', 'yay-currency' ),
-			'notice_desc'   => __( 'Recommended: You can force a database update for past orders so that the revenue recorded in different currencies will be recorded in your default currency. This action will convert the sales based on the current exchange rate.', 'yay-currency' ),
-			'notice_button' => __( 'Convert all orders', 'yay-currency' ),
-		);
-		$localize_args    = array(
-			'sync_orders'     => $sync_notice_args,
-			'sync_currencies' => Helper::get_sync_currencies(),
-			'nonce'           => wp_create_nonce( 'yay-currency-admin-nonce' ),
-		);
-		wp_enqueue_script( 'yay-currency-admin-script', YAY_CURRENCY_PLUGIN_URL . 'src/admin/script.js', array( 'jquery' ), YAY_CURRENCY_VERSION, true );
-		wp_localize_script(
-			'yay-currency-admin-script',
-			'yayCurrency_Admin',
-			apply_filters( 'YayCurrency/Admin/GetLocalizeArgs', $localize_args )
-		);
 	}
 
 	// Action Hook Manual Order

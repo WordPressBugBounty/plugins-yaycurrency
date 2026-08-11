@@ -8,42 +8,44 @@ use Yay_Currency\Helpers\YayCurrencyHelper;
 defined( 'ABSPATH' ) || exit;
 
 // Link plugin: https://woocommerce.com/products/woocommerce-paypal-payments/
-
 class WooCommercePayPalPayments {
 
 	use SingletonTrait;
 
-	private $apply_currency   = array();
-	private $default_currency = '';
-	private $is_dis_checkout_diff_currency;
+	private $apply_currency                = array();
+	private $default_currency              = '';
+	private $is_dis_checkout_diff_currency = false;
+
 	public function __construct() {
 
 		if ( ! class_exists( 'WooCommerce\PayPalCommerce\PPCP' ) ) {
 			return;
 		}
 
-		$this->apply_currency = YayCurrencyHelper::detect_current_currency();
-
-		if ( ! $this->apply_currency ) {
-			return;
-		}
+		$this->apply_currency                = YayCurrencyHelper::detect_current_currency();
 		$this->default_currency              = Helper::default_currency_code();
 		$this->is_dis_checkout_diff_currency = YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency );
 
 		add_filter( 'woocommerce_currency', array( $this, 'woocommerce_currency' ), 999 );
-		add_filter( 'woocommerce_paypal_args', array( $this, 'custom_request_paypal' ), 10, 2 );
 
 		if ( $this->is_dis_checkout_diff_currency ) {
-
-			add_filter( 'YayCurrency/Detect/FallbackCurrency/CheckoutPage', array( $this, 'disable_fallback_checkout_conditions' ), 10, 1 );
-
-			add_filter( 'yay_currency_woocommerce_currency', array( $this, 'custom_currency_paypal_method' ), 10, 2 );
-			add_filter( 'yay_currency_is_original_default_currency', array( $this, 'is_original_default_currency' ), 20, 2 );
-
-			add_filter( 'yay_currency_localize_args', array( $this, 'add_localize_args' ), 10, 1 );
+			add_filter( 'yay_currency_disable_fallback_checkout_conditions', array( $this, 'disable_fallback_checkout_conditions' ), 10, 1 );
+			add_filter( 'yay_currency_woocommerce_currency', array( $this, 'get_paypal_checkout_currency' ), 10, 2 );
+			add_filter( 'yay_currency_is_original_default_currency', array( $this, 'force_original_default_currency' ), 20, 2 );
+			add_filter( 'yay_currency_callback_localize_args', array( $this, 'add_localize_args' ), 10, 1 );
 
 			if ( isset( $_COOKIE['ppc_paypal_cart_or_product_page'] ) ) {
-				add_filter( 'woocommerce_cart_get_total', array( $this, 'convert_to_default' ), 999, 1 );
+				$cart_total_hooks = array(
+					'woocommerce_cart_get_subtotal',
+					'woocommerce_cart_get_subtotal_tax',
+					'woocommerce_cart_get_shipping_total',
+					'woocommerce_cart_get_total_tax',
+					'woocommerce_cart_get_discount_total',
+					'woocommerce_cart_get_total_fees',
+				);
+				foreach ( $cart_total_hooks as $hook ) {
+					add_filter( $hook, array( $this, 'convert_cart_total_to_default_currency' ), 999, 1 );
+				}
 			}
 		}
 
@@ -66,29 +68,10 @@ class WooCommercePayPalPayments {
 		return $currency;
 	}
 
-	public function disable_fallback_checkout_conditions( $flag ) {
-		$flag = false;
-		if ( wp_doing_ajax() && isset( $_COOKIE['ppc_paypal_checkout_page'] ) && isset( $_REQUEST['wc-ajax'] ) ) {
-			$wc_ajax_conditions = array( 'get_refreshed_fragments', 'wc_stripe_get_cart_details' );
-			$flag               = in_array( $_REQUEST['wc-ajax'], $wc_ajax_conditions );
-		}
-		return $flag;
-	}
-
-	public function custom_currency_paypal_method( $currency, $is_dis_checkout_diff_currency ) {
-
-		if ( $is_dis_checkout_diff_currency ) {
-			$currency = $this->default_currency;
-		}
-
-		return $currency;
-
-	}
-
-	public function is_calculate_total_default_currency() {
+	public function should_calculate_with_default_currency() {
 		$flag = false;
 
-		if ( wp_doing_ajax() ) {
+		if ( wp_doing_ajax() && function_exists( 'WC' ) ) {
 			$args_ajax = array( 'ppc-create-order', 'ppc-save-checkout-form' );
 			if ( isset( $_REQUEST['wc-ajax'] ) && in_array( $_REQUEST['wc-ajax'], $args_ajax ) ) {
 				return true;
@@ -98,23 +81,30 @@ class WooCommercePayPalPayments {
 		return $flag;
 	}
 
-	public function is_original_default_currency( $flag, $apply_currency ) {
+	public function force_original_default_currency( $flag, $apply_currency = array() ) {
 
-		if ( $this->is_calculate_total_default_currency() ) {
+		if ( $this->should_calculate_with_default_currency() ) {
 			$flag = true;
 		}
 
 		return $flag;
 	}
 
-	public function custom_request_paypal( $args, $order ) {
-		if ( $this->is_dis_checkout_diff_currency ) {
-			$currency_code = $this->default_currency;
-		} else {
-			$currency_code = isset( $this->apply_currency['currency'] ) ? $this->apply_currency['currency'] : $this->default_currency;
+	public function disable_fallback_checkout_conditions( $flag ) {
+		$flag = false;
+		if ( wp_doing_ajax() && isset( $_COOKIE['ppc_paypal_checkout_page'] ) && isset( $_REQUEST['wc-ajax'] ) ) {
+			$wc_ajax_conditions = array( 'get_refreshed_fragments', 'wc_stripe_get_cart_details' );
+			$flag               = in_array( $_REQUEST['wc-ajax'], $wc_ajax_conditions );
 		}
-		$args['currency_code'] = $currency_code;
-		return $args;
+		return $flag;
+	}
+
+	public function get_paypal_checkout_currency( $currency, $is_dis_checkout_diff_currency ) {
+		if ( $is_dis_checkout_diff_currency ) {
+			return $this->default_currency;
+		}
+		return $currency;
+
 	}
 
 	public function add_localize_args( $localize_args ) {
@@ -127,10 +117,13 @@ class WooCommercePayPalPayments {
 		return $localize_args;
 	}
 
-	public function convert_to_default( $real_value ) {
-		if ( $this->is_calculate_total_default_currency() ) {
-			$real_value = floatval( $real_value / YayCurrencyHelper::get_rate_fee( $this->apply_currency ) );
+
+	public function convert_cart_total_to_default_currency( $value = 0 ) {
+		if ( $this->should_calculate_with_default_currency() ) {
+			$rate_fee = YayCurrencyHelper::get_rate_fee( $this->apply_currency );
+			$value    = floatval( $value / $rate_fee );
 		}
-		return $real_value;
+
+		return $value;
 	}
 }

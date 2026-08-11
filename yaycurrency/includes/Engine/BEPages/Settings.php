@@ -29,11 +29,8 @@ class Settings {
 		// Register Custom Post Type
 		add_action( 'init', array( $this, 'register_post_type' ) );
 
-		add_action( 'admin_menu', array( $this, 'admin_menu' ), YAY_CURRENCY_MENU_PRIORITY );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
-		add_filter( 'plugin_action_links_' . YAY_CURRENCY_BASE_NAME, array( $this, 'addActionLinks' ) );
-		add_filter( 'plugin_row_meta', array( $this, 'addDocumentSupportLinks' ), 10, 2 );
 		add_filter( 'woocommerce_general_settings', array( $this, 'add_multi_currencies_button' ), 10, 1 );
 
 		// Cryptocurrencies
@@ -90,17 +87,9 @@ class Settings {
 
 	}
 
-	public function admin_menu() {
-		$page_title            = __( 'YayCurrency', 'yay-currency' );
-		$menu_title            = __( 'YayCurrency', 'yay-currency' );
-		$this->setting_hookfix = add_submenu_page( 'yaycommerce', $page_title, $menu_title, 'manage_woocommerce', 'yay_currency', array( $this, 'submenu_page_callback' ), 0 );
-	}
-
 	public function admin_enqueue_scripts( $hook_suffix ) {
 
-		do_action( 'YayCurrency/Admin/EnqueueScripts' );
-
-		$allow_hook_suffixes = array( 'yaycommerce_page_yay_currency', 'nav-menus.php', 'widgets.php', 'post-new.php' );
+		$allow_hook_suffixes = array( 'yaycommerce_page_yay-currency-settings', 'nav-menus.php', 'widgets.php', 'post-new.php' );
 		if ( 'post.php' === $hook_suffix || 'post-new.php' === $hook_suffix ) {
 			$post_id   = get_the_ID();
 			$post_type = get_post_type( $post_id );
@@ -113,7 +102,7 @@ class Settings {
 			return;
 		}
 
-		if ( 'yaycommerce_page_yay_currency' !== $hook_suffix ) {
+		if ( 'yaycommerce_page_yay-currency-settings' !== $hook_suffix ) {
 			wp_enqueue_style(
 				'yay-currency-admin-styles',
 				YAY_CURRENCY_PLUGIN_URL . 'src/admin-styles.css',
@@ -162,29 +151,6 @@ class Settings {
 			wp_enqueue_style( ScriptName::STYLE_SETTINGS );
 		}
 
-	}
-
-	public function submenu_page_callback() {
-		echo '<div id="yay-currency"></div>';
-	}
-
-	public function addActionLinks( $links ) {
-		$action_links = array(
-			'settings' => '<a href="' . esc_url( admin_url( '/admin.php?page=yay_currency' ) ) . '">' . __( 'Settings', 'yay-currency' ) . '</a>',
-		);
-		$links[]      = '<a target="_blank" href="https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/" style="color: #43B854; font-weight: bold">' . __( 'Go Pro', 'yay-currency' ) . '</a>';
-		return array_merge( $action_links, $links );
-	}
-
-	public function addDocumentSupportLinks( $links, $file ) {
-		if ( strpos( $file, YAY_CURRENCY_BASE_NAME ) !== false ) {
-			$new_links = array(
-				'doc'     => '<a href="https://yaycommerce.gitbook.io/yaycurrency/" target="_blank">' . __( 'Docs', 'yay-currency' ) . '</a>',
-				'support' => '<a href="https://yaycommerce.com/support/" target="_blank" aria-label="' . esc_attr__( 'Visit community forums', 'yay-currency' ) . '">' . esc_html__( 'Support', 'yay-currency' ) . '</a>',
-			);
-			$links     = array_merge( $links, $new_links );
-		}
-		return $links;
 	}
 
 	public function add_multi_currencies_button( $sections ) {

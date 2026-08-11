@@ -2,8 +2,8 @@
 Contributors: YayCommerce
 Tags: currency switcher, multi currency, woocommerce, currency, currency converter, multicurrency
 Requires at least: 3.0
-Tested up to: 6.9
-Stable tag: 3.3.4
+Tested up to: 7.0
+Stable tag: 3.3.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -255,6 +255,28 @@ To quickly get the answers, please attach screenshots of currently active WooCom
 5. Checkout permission for different payment methods and currencies 
 
 == Changelog ==
+
+= Aug 11, 2026 - Version 3.3.5 =
+- Added: Bulk Edit Fixed Prices for product variations. -- PRO only
+- Updated: Header Nav Menu layout with new UIKit.
+- Updated: Update menu position.
+- Updated: Change capability from manage_options to manage_woocommerce.
+- Updated: WC tested up to 11.0
+- Improved: set_cookie function.
+- Improved: detect_google_crawler function.
+- Fixed: Several security issues reported by Shivamani Vastrala.
+- Fixed: Issue with WooCommerce Subscriptions (Fatal error: Call to a member function get_order()).
+- Fixed: Max amount coupon not working.
+- Fixed: Compatible with the B2BKing Pro plugin.
+- Fixed: Compatible with Advanced Product Fields Extended for WooCommerce (latest version 3.1.7+).
+- Fixed: Compatible with WooCommerce PayPal Payments (latest version).
+- Fixed: Compatible with Advanced Product Fields (Product Options) for WooCommerce (latest version).
+- Fixed: Decimal issues with fixed prices. -- PRO only   
+- Fixed: Format exchange rates for the Cuex and FawazCurrency APIs.  -- PRO only   
+- Fixed: Google Finance API not working.  -- PRO only      
+- Fixed: Issues with fixed prices in Bookings Appointments for WooCommerce Premium. -- PRO only 
+- Fixed: Currency conversion for full refund order stats.
+
 = Mar 30, 2026 - Version 3.3.4 =
 - Added: Fixed shipping cost per currency feature. --- Pro version only
 - Added: Geo API option detects the country by IP. --- Pro version only

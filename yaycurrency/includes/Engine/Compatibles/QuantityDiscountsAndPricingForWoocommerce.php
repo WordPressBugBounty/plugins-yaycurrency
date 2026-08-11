@@ -30,8 +30,6 @@ class QuantityDiscountsAndPricingForWoocommerce {
 
 		add_filter( 'woocommerce_cart_item_price', array( $this, 'custom_woocommerce_cart_item_price' ), PHP_INT_MAX, 3 );
 
-		add_action( 'wp_ajax_yay_currency_plgfyqdp_quantity_discount_convert', array( $this, 'handle_ajax_quantity_discount_convert' ) );
-		add_action( 'wp_ajax_nopriv_yay_currency_plgfyqdp_quantity_discount_convert', array( $this, 'handle_ajax_quantity_discount_convert' ) );
 	}
 
 	public function is_original_product_price( $flag, $price, $product ) {
@@ -83,28 +81,5 @@ class QuantityDiscountsAndPricingForWoocommerce {
 		}
 
 		return $price;
-	}
-
-	public function handle_ajax_quantity_discount_convert() {
-		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
-
-		if ( ! $nonce || ( ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-nonce' ) && is_user_logged_in() ) ) {
-			wp_send_json_error( array( 'message' => __( 'Nonce invalid', 'yay-currency' ) ) );
-		}
-
-		if ( isset( $_POST['prices'] ) && is_array( $_POST['prices'] ) ) {
-			$plugify_prices   = map_deep( wp_unslash( $_POST['prices'] ), 'sanitize_text_field' );
-			$converted_prices = array_map(
-				function ( $price ) {
-					$converted_price = YayCurrencyHelper::calculate_price_by_currency( $price, false, $this->apply_currency );
-					return YayCurrencyHelper::format_price( $converted_price );
-				},
-				$plugify_prices
-			);
-
-			wp_send_json_success( $converted_prices );
-		} else {
-			wp_send_json_error( 'Invalid data' );
-		}
 	}
 }

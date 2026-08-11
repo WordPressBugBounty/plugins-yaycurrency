@@ -117,11 +117,11 @@ class SupportHelper {
 				);
 				$shipping_fee = self::evaluate_cost( $cost, $args, false, $is_fallback );
 				if ( is_numeric( $shipping_fee ) && ! strpos( $cost, 'fee' ) ) {
-					$shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $shipping_fee, true, $apply_currency );
+					$shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $shipping_fee, $will_not_round_shipping_cost, $apply_currency );
 				}
 				$shipping_fee = apply_filters( 'YayCurrency/InclTax/GetShippingFee', $shipping_fee, $method, $apply_currency );
 			} else {
-				$shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $cost, true, $apply_currency );
+				$shipping_fee = YayCurrencyHelper::calculate_price_by_currency( $cost, $will_not_round_shipping_cost, $apply_currency );
 			}
 		} else {
 			$shipping_fee = 0;
@@ -591,6 +591,24 @@ class SupportHelper {
 		return false;
 
 	}
+
+	public static function is_rest_route_request( $rest_namespace = '', $rest_route = '' ) {
+
+		if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+			return false;
+		}
+
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( $_SERVER['REQUEST_URI'] ) : '';
+
+		$path = sprintf( '/%s/%s', rest_get_url_prefix(), trim( $rest_namespace, '/' ) );
+
+		if ( '' !== $rest_route ) {
+			$path .= '/' . ltrim( $rest_route, '/' );
+		}
+
+		return false !== strpos( $request_uri, $path );
+	}
+
 
 	public static function display_approximately_converted_price( $apply_currency ) {
 		return apply_filters( 'yay_currency_checkout_converted_approximately', true, $apply_currency );

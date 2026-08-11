@@ -11,6 +11,13 @@ class YayCurrencyHelper {
 	// calculate line subtotal with shortcode [yaycurrency-fee]
 	public static $evaluate_line_subtotal = 0;
 
+	/**
+	 * Cookies already sent during the current request.
+	 *
+	 * @var array<string, string>
+	 */
+	private static $sent_cookies_in_request = array();
+
 	protected function __construct() {}
 
 
@@ -70,7 +77,7 @@ class YayCurrencyHelper {
 	public static function disable_fallback_option_in_checkout_page( $apply_currency = array() ) {
 		$is_dis_checkout_diff_currency = self::is_dis_checkout_diff_currency( $apply_currency );
 		$checkout_blocks               = SupportHelper::is_checkout_blocks(); // checkout use gutenberg blocks
-		$is_checkout_page              = is_checkout() || $checkout_blocks || apply_filters( 'YayCurrency/Detect/FallbackCurrency/CheckoutPage', false );
+		$is_checkout_page              = is_checkout() || $checkout_blocks || apply_filters( 'yay_currency_disable_fallback_checkout_conditions', false );
 		$order_received_page           = $is_checkout_page && is_wc_endpoint_url( 'order-pay' ) || is_wc_endpoint_url( 'order-received' );
 		return $is_dis_checkout_diff_currency && ( $is_checkout_page || $order_received_page );
 	}
@@ -96,13 +103,25 @@ class YayCurrencyHelper {
 	}
 
 	public static function set_cookie( $cookie_name, $cookie_value ) {
-		setcookie( $cookie_name, (string) $cookie_value, time() + ( 86400 * 30 ), '/' );
+		if ( headers_sent() ) {
+			return;
+		}
+
+		$cookie_value = (string) $cookie_value;
+		if ( isset( self::$sent_cookies_in_request[ $cookie_name ] ) && self::$sent_cookies_in_request[ $cookie_name ] === $cookie_value ) {
+			return;
+		}
+
+		setcookie( $cookie_name, $cookie_value, time() + ( 86400 * 30 ), '/' );
+		$_COOKIE[ $cookie_name ]                       = $cookie_value;
+		self::$sent_cookies_in_request[ $cookie_name ] = $cookie_value;
 	}
 
 	public static function delete_cookie( $cookie_name ) {
 		if ( isset( $_COOKIE[ $cookie_name ] ) ) {
 			unset( $_COOKIE[ $cookie_name ] );
 			setcookie( $cookie_name, '', -1, '/' );
+			unset( self::$sent_cookies_in_request[ $cookie_name ] );
 		}
 	}
 
@@ -396,6 +415,13 @@ class YayCurrencyHelper {
 	public static function get_current_currency( $apply_currency = array() ) {
 		$apply_currency = apply_filters( 'yay_currency_detect_current_currency', $apply_currency );
 		return $apply_currency ? $apply_currency : self::detect_current_currency();
+	}
+
+	public static function should_show_approximate_price() {
+		if ( is_checkout() ) {
+			return true;
+		}
+		return apply_filters( 'yay_currency_should_show_approximate_price', false );
 	}
 
 	public static function detect_allow_hide_dropdown_currencies() {

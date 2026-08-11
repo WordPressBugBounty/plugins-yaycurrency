@@ -46,6 +46,13 @@ class WooCommerceTMExtraProductOptions {
 	}
 
 	public function wc_epo_enabled_currencies( $currencies = [] ) {
+		if ( apply_filters( 'YayCurrency/WooCommerceTMExtraProductOptions/DisableEnabledCurrencies', false ) ) {
+			return $currencies;
+		}
+		if ( defined( 'WC_STRIPE_VERSION' ) ) {
+			return $currencies;
+		}
+
 		$all_currencies = Helper::get_currencies_post_type();
 		if ( ! $all_currencies ) {
 			return $currencies;

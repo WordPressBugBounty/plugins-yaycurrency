@@ -68,8 +68,8 @@ class WooCommerceCurrency {
 
 			// Filter to Coupon Min/Max
 			add_filter( 'woocommerce_coupon_get_amount', array( $this, 'change_coupon_amount' ), 10, 2 );
-			add_filter( 'woocommerce_coupon_get_minimum_amount', array( $this, 'change_coupon_min_max_amount' ), 10, 2 );
-			add_filter( 'woocommerce_coupon_get_maximum_amount', array( $this, 'change_coupon_min_max_amount' ), 10, 2 );
+			add_filter( 'woocommerce_coupon_get_minimum_amount', array( $this, 'change_coupon_min_amount' ), 10, 2 );
+			add_filter( 'woocommerce_coupon_get_maximum_amount', array( $this, 'change_coupon_max_amount' ), 10, 2 );
 
 			// Custom price fees
 			$fee_priority = SupportHelper::get_fee_priority();
@@ -177,7 +177,7 @@ class WooCommerceCurrency {
 		wp_localize_script(
 			'yay-currency-frontend-script',
 			'yayCurrency',
-			apply_filters( 'yay_currency_localize_args', $localize_args )
+			apply_filters( 'YayCurrency/Frontend/GetLocalizeArgs', $localize_args )
 		);
 
 		// Third Party
@@ -330,7 +330,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_checkout_product_subtotal( $product_subtotal, $product, $quantity, $cart ) {
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $product_subtotal;
@@ -378,7 +378,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_checkout_order_subtotal( $cart_subtotal ) {
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $cart_subtotal;
@@ -410,7 +410,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_discount_coupon( $coupon_html, $coupon, $discount_amount_html ) {
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $coupon_html;
@@ -423,7 +423,7 @@ class WooCommerceCurrency {
 
 	public function custom_shipping_fee( $label, $method ) {
 
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 
 			$shipping_fee = (float) $method->cost;
 
@@ -451,7 +451,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_cart_totals_fee_html( $cart_totals_fee_html, $fee ) {
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 			$converted_approximately = SupportHelper::display_approximately_converted_price( $this->apply_currency );
 
 			if ( ! $converted_approximately || YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
@@ -472,7 +472,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_total_tax( $tax_display ) {
-		if ( count( $tax_display ) > 0 && is_checkout() ) {
+		if ( count( $tax_display ) > 0 && YayCurrencyHelper::should_show_approximate_price() ) {
 
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $tax_display;
@@ -503,7 +503,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_cart_totals_taxes( $taxes_total_html ) {
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $taxes_total_html;
 			}
@@ -526,7 +526,7 @@ class WooCommerceCurrency {
 	}
 
 	public function custom_checkout_order_total( $cart_total ) {
-		if ( is_checkout() ) {
+		if ( YayCurrencyHelper::should_show_approximate_price() ) {
 
 			if ( YayCurrencyHelper::is_current_fallback_currency( $this->currencies_data ) ) {
 				return $cart_total;
@@ -573,7 +573,7 @@ class WooCommerceCurrency {
 		return $converted_coupon_price;
 	}
 
-	public function change_coupon_min_max_amount( $price, $coupon ) {
+	protected function convert_coupon_min_max_amount( $price, $coupon ) {
 
 		if ( empty( $price ) || ! $price ) {
 			return $price;
@@ -587,7 +587,24 @@ class WooCommerceCurrency {
 		$converted_coupon_price = apply_filters( 'YayCurrency/GetCouponAmount', $converted_coupon_price, $coupon, $this->apply_currency );
 
 		return $converted_coupon_price;
+	}
 
+	public function change_coupon_min_amount( $price, $coupon ) {
+		$price = self::convert_coupon_min_max_amount( $price, $coupon );
+		return $price;
+	}
+
+	public function change_coupon_max_amount( $price, $coupon ) {
+		if ( doing_filter( 'woocommerce_coupon_get_maximum_amount' ) && empty( $price ) ) {
+			$coupon_data = $coupon->get_data();
+			if ( isset( $coupon_data['minimum_amount'] ) && ! empty( $coupon_data['minimum_amount'] ) ) {
+				$coupon_id = $coupon->get_id();
+				$price     = get_post_meta( $coupon_id, 'maximum_amount', true );
+			}
+		}
+
+		$price = self::convert_coupon_min_max_amount( $price, $coupon );
+		return $price;
 	}
 
 	public function recalculate_cart_fees( $cart ) {
@@ -1058,8 +1075,9 @@ class WooCommerceCurrency {
 	}
 
 	public function change_woocommerce_currency( $currency ) {
-		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
-		if ( ! $apply_currency || YayCurrencyHelper::disable_fallback_option_in_checkout_page( $apply_currency ) ) {
+		$apply_currency                                 = YayCurrencyHelper::get_current_currency( $this->apply_currency );
+		$check_disable_fallback_option_in_checkout_page = apply_filters( 'yay_currency_check_disable_fallback_option_in_checkout_page', true );
+		if ( ! $apply_currency || ( $check_disable_fallback_option_in_checkout_page && YayCurrencyHelper::disable_fallback_option_in_checkout_page( $apply_currency ) ) ) {
 			$currency = apply_filters( 'yay_currency_woocommerce_currency', $currency, $this->is_dis_checkout_diff_currency );
 			return $currency;
 		}
@@ -1094,17 +1112,26 @@ class WooCommerceCurrency {
 		return Helper::change_currency_position( $apply_currency );
 	}
 
-	public function change_thousand_separator() {
+	public function change_thousand_separator( $thousand_separator ) {
+		if ( apply_filters( 'YayCurrency/DisableThousandSeparator', false ) ) {
+			return $thousand_separator;
+		}
 		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
 		return Helper::change_thousand_separator( $apply_currency );
 	}
 
-	public function change_decimal_separator() {
+	public function change_decimal_separator( $price_decimal_sep ) {
+		if ( apply_filters( 'YayCurrency/DisableDecimalSeparator', false ) ) {
+			return $price_decimal_sep;
+		}
 		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
 		return Helper::change_decimal_separator( $apply_currency );
 	}
 
-	public function change_number_decimals() {
+	public function change_number_decimals( $num_decimals ) {
+		if ( apply_filters( 'YayCurrency/DisableNumberDecimal', false ) ) {
+			return $num_decimals;
+		}
 		$apply_currency = YayCurrencyHelper::get_current_currency( $this->apply_currency );
 		return Helper::change_number_decimals( $apply_currency );
 	}

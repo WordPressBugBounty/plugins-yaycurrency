@@ -2,7 +2,6 @@
 namespace Yay_Currency\Engine\Compatibles;
 
 use Yay_Currency\Utils\SingletonTrait;
-use Yay_Currency\Helpers\Helper;
 use Yay_Currency\Helpers\YayCurrencyHelper;
 
 defined( 'ABSPATH' ) || exit;
@@ -51,16 +50,33 @@ class WoodmartTheme {
 		return $limit;
 	}
 
+	/**
+	 * Determine whether the specified class has a public, non-abstract method.
+	 *
+	 * @param string $class_name  Class name.
+	 * @param string $method_name Method name.
+	 *
+	 * @return bool True if the method exists, is public and non-abstract.
+	 */
+	private static function has_public_method( $class_name, $method_name ) {
+		try {
+			$method = new \ReflectionMethod( $class_name, $method_name );
+			return $method->isPublic() && ! $method->isAbstract();
+		} catch ( \ReflectionException $e ) {
+			return false;
+		}
+	}
+
 	public function woocommerce_cart_get_cart_contents_total( $total ) {
-		if ( class_exists( 'JEMTR_Table_Rate_Shipping_Method' ) && Helper::is_method_executed( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
-			$total = $total / YayCurrencyHelper::get_rate_fee( $this->apply_currency );
+		if ( self::has_public_method( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
+			$total /= YayCurrencyHelper::get_rate_fee( $this->apply_currency );
 		}
 		return $total;
 	}
 
 	public function woocommerce_cart_get_cart_contents_tax( $total_tax ) {
-		if ( class_exists( 'JEMTR_Table_Rate_Shipping_Method' ) && Helper::is_method_executed( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
-			$total_tax = $total_tax / YayCurrencyHelper::get_rate_fee( $this->apply_currency );
+		if ( self::has_public_method( 'JEMTR_Table_Rate_Shipping_Method', 'calculate_shipping' ) ) {
+			$total_tax /= YayCurrencyHelper::get_rate_fee( $this->apply_currency );
 		}
 		return $total_tax;
 	}

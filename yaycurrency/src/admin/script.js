@@ -28,7 +28,7 @@
         }
 
         self.showNotice = function () {
-            const sync_orders = yayCurrency_Admin.sync_orders ?? false;
+            const sync_orders = window.yayCurrencyWooCommerceAdmin.sync_orders ?? false;
             if ((sync_orders && sync_orders.reverted && 'yes' === sync_orders.reverted) || !$('.woocommerce-layout__primary').length) {
                 return;
             }
@@ -57,9 +57,9 @@
                 data: {
                     action: 'yayCurrency_sync_orders_revert_to_base',
                     _yay_sync: 'yes',
-                    _sync_currencies: yayCurrency_Admin.sync_currencies,
+                    _sync_currencies: window.yayCurrencyWooCommerceAdmin.sync_currencies,
                     _paged: paged,
-                    _nonce: yayCurrency_Admin.nonce,
+                    _nonce: window.yayCurrencyWooCommerceAdmin.wc_admin_nonce,
                 },
                 beforeSend: function (res) {
                     $(self.sync_orders_button).addClass(self.loadingButtonClass);

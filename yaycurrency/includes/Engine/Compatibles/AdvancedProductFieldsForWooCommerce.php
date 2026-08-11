@@ -6,7 +6,6 @@ use Yay_Currency\Utils\SingletonTrait;
 use Yay_Currency\Helpers\Helper;
 use Yay_Currency\Helpers\YayCurrencyHelper;
 use Yay_Currency\Helpers\SupportHelper;
-use SW_WAPF_PRO\Includes\Classes\Fields;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -33,12 +32,18 @@ class AdvancedProductFieldsForWooCommerce {
 
 		if ( $this->lite_version ) {
 			add_action( 'woocommerce_before_calculate_totals', array( $this, 'recalculate_pricing' ), 9 );
+			// WAPF Lite uses get_price() (already converted) as base then set_price().
+			// Reset to default-currency base+options so YayCurrency converts only once.
+			add_action( 'woocommerce_before_calculate_totals', array( $this, 'reset_lite_cart_item_price_to_default' ), 11 );
 		} else {
 			add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
+			// Like WOOCS/Aelia: force cart calc base back to store currency so options aren't converted twice.
+			add_filter( 'wapf/pricing/cart_item_base', array( $this, 'get_cart_item_base_in_default_currency' ), 20, 4 );
+			add_filter( 'wapf/pricing/cart_item_base_for_formulas', array( $this, 'get_cart_item_base_in_default_currency' ), 10, 4 );
 		}
 
 		// Script Convert Wapf Price To Current Currency
-		add_action( 'wp_footer', array( $this, 'convert_wapf_price_script' ), 999 );
+		// add_action( 'wp_footer', array( $this, 'convert_wapf_price_script' ), 999 );
 
 		// Label Addon Price
 		if ( $this->lite_version ) {
@@ -48,9 +53,17 @@ class AdvancedProductFieldsForWooCommerce {
 			add_filter( 'woocommerce_get_item_data', array( $this, 'display_fields_on_cart_and_checkout' ), 999, 2 );
 			add_action( 'woocommerce_checkout_create_order_line_item', array( $this, 'create_order_line_item' ), 999, 4 );
 		} else {
-			add_filter( 'wapf/html/pricing_hint/amount', array( $this, 'convert_pricing_hint' ), 10, 3 );
+			// Option tip text (Select label): amount → format_pricing_hint
+			add_filter( 'wapf/html/pricing_hint/amount', array( $this, 'convert_pricing_hint' ), 10, 5 );
+			// data-wapf-price + data-wapf-label (Select/radio/checkbox options)
+			add_filter( 'wapf/html/option_attributes', array( $this, 'convert_option_attributes' ), 10, 4 );
+			// data-wapf-price on field-level inputs (text, number, true-false, …)
+			add_filter( 'wapf/html/field_attributes', array( $this, 'convert_field_attributes' ), 10, 4 );
+			// Variable product: keep WAPF apf_base in current currency (like WOOCS/Aelia).
+			add_filter( 'woocommerce_available_variation', array( $this, 'set_variant_base_price' ), 10, 3 );
 		}
 
+		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
 		add_filter( 'yay_currency_product_price_3rd_with_condition', array( $this, 'get_product_price_with_options' ), 999, 2 );
 		add_filter( 'YayCurrency/ApplyCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_price_with_options_for_cart_item' ), 10, 5 );
 		add_filter( 'YayCurrency/StoreCurrency/ByCartItem/GetPriceOptions', array( $this, 'get_default_price_with_options_for_cart_item' ), 10, 4 );
@@ -58,6 +71,9 @@ class AdvancedProductFieldsForWooCommerce {
 		if ( defined( 'ELEMENTOR_PRO_VERSION' ) ) {
 			add_filter( 'woocommerce_cart_subtotal', array( $this, 'recalculate_cart_subtotal_mini_cart' ), 10, 3 );
 		}
+
+		// Product totals block: convert data-product-price (base used by WAPF JS).
+		add_filter( 'wapf/html/product_totals', array( $this, 'convert_product_totals_html' ), 10, 2 );
 	}
 
 	// CalCulate Total Wapf Price
@@ -228,7 +244,7 @@ class AdvancedProductFieldsForWooCommerce {
 		return $price;
 	}
 	// Pro version
-	public function convert_pricing_hint( $amount, $product, $type ) {
+	public function convert_pricing_hint( $amount, $product, $type, $for_page = 'shop', $field = null ) {
 		$types = array( 'p', 'percent' );
 		if ( in_array( $type, $types, true ) ) {
 			return $amount;
@@ -238,6 +254,102 @@ class AdvancedProductFieldsForWooCommerce {
 		}
 		$amount = YayCurrencyHelper::calculate_price_by_currency( $amount, false, $this->apply_currency );
 		return $amount;
+	}
+
+	public function convert_option_attributes( $attributes, $field, $product, $option ) {
+		if ( $this->should_skip_currency_convert() ) {
+			return $attributes;
+		}
+
+		$type = $option['pricing_type'] ?? 'none';
+		if ( empty( $type ) || 'none' === $type ) {
+			return $attributes;
+		}
+
+		// data-wapf-price (addon_value_for_calculations has no currency filter in current WAPF Pro).
+		if ( isset( $attributes['data-wapf-price'] ) && 'fx' !== $type && is_numeric( $attributes['data-wapf-price'] ) ) {
+			$attributes['data-wapf-price'] = YayCurrencyHelper::calculate_price_by_currency(
+				(float) $attributes['data-wapf-price'],
+				false,
+				$this->apply_currency
+			);
+		}
+
+		// data-wapf-label: append converted pricing hint (FX rebuilds label+hint in JS — keep bare label).
+		if ( 'fx' !== $type && ! empty( $attributes['data-wapf-label'] ) && class_exists( '\SW_WAPF_PRO\Includes\Classes\Html' ) ) {
+			$hint = \SW_WAPF_PRO\Includes\Classes\Html::frontend_option_pricing_hint( $option, $field, $product );
+			$hint = html_entity_decode( wp_strip_all_tags( (string) $hint ), ENT_QUOTES, get_bloginfo( 'charset' ) );
+			if ( '' !== $hint ) {
+				$attributes['data-wapf-label'] = trim( $attributes['data-wapf-label'] . ' ' . $hint );
+			}
+		}
+
+		return $attributes;
+	}
+
+	public function convert_field_attributes( $attributes, $field, $product, $field_group_id ) {
+		if ( $this->should_skip_currency_convert() ) {
+			return $attributes;
+		}
+		if ( empty( $attributes['data-wapf-price'] ) || empty( $attributes['data-wapf-pricetype'] ) ) {
+			return $attributes;
+		}
+		if ( 'fx' === $attributes['data-wapf-pricetype'] || ! is_numeric( $attributes['data-wapf-price'] ) ) {
+			return $attributes;
+		}
+
+		$attributes['data-wapf-price'] = YayCurrencyHelper::calculate_price_by_currency(
+			(float) $attributes['data-wapf-price'],
+			false,
+			$this->apply_currency
+		);
+
+		return $attributes;
+	}
+
+	/**
+	 * Like WOOCS/Aelia: set variation apf_base for WAPF JS pricing.
+	 * YayCurrency converts option prices, so apf_base must be in the same (current) currency.
+	 */
+	public function set_variant_base_price( $variant_data, $product, $variation ) {
+		if ( $this->should_skip_currency_convert() ) {
+			return $variant_data;
+		}
+
+		if ( ! in_array( $product->get_type(), array( 'variable', 'variable-subscription' ), true ) ) {
+			return $variant_data;
+		}
+
+		$original_price = $this->get_original_product_price( $variation );
+		$currency_price = YayCurrencyHelper::calculate_price_by_currency( $original_price, false, $this->apply_currency );
+
+		$variant_data['apf_base'] = $currency_price;
+
+		return $variant_data;
+	}
+
+	private function get_original_product_price( $product, $for_page = 'shop' ) {
+		$the_product = wc_get_product( $product->get_id() );
+		$tax_display = get_option( 'woocommerce_tax_display_' . $for_page );
+		$args        = array(
+			'qty'   => 1,
+			'price' => $the_product->get_price( 'edit' ),
+		);
+
+		return 'incl' === $tax_display
+			? wc_get_price_including_tax( $product, $args )
+			: wc_get_price_excluding_tax( $product, $args );
+	}
+
+
+	private function should_skip_currency_convert() {
+		if ( empty( $this->apply_currency['currency'] ) ) {
+			return true;
+		}
+		if ( Helper::default_currency_code() === $this->apply_currency['currency'] ) {
+			return true;
+		}
+		return YayCurrencyHelper::disable_fallback_option_in_checkout_page( $this->apply_currency );
 	}
 
 	private function convert_add_on_label( $meta_value, $wapf, $pattern = false ) {
@@ -386,7 +498,10 @@ class AdvancedProductFieldsForWooCommerce {
 
 	public function get_product_price_with_options( $price, $product ) {
 		$price_options_by_current_currency = SupportHelper::get_cart_item_objects_property( $product, 'price_with_options_by_currency' );
-		return $price_options_by_current_currency ? $price_options_by_current_currency : $price;
+		if ( false !== $price_options_by_current_currency && '' !== $price_options_by_current_currency ) {
+			return (float) $price_options_by_current_currency;
+		}
+		return $price;
 	}
 
 	public function get_price_with_options_for_cart_item( $price_options, $cart_item, $product_id, $original_price, $apply_currency ) {
@@ -425,5 +540,158 @@ class AdvancedProductFieldsForWooCommerce {
 			}
 		}
 		return $subtotal;
+	}
+
+	/**
+	 * Convert WAPF product totals base price (data-product-price) to current YayCurrency.
+	 * Lite has no option attribute filters, so also convert data-wapf-price once via JS.
+	 *
+	 * @param string      $totals_html Product totals HTML.
+	 * @param \WC_Product $product     Product object.
+	 * @return string
+	 */
+	public function convert_product_totals_html( $totals_html, $product ) {
+		if ( $this->should_skip_currency_convert() ) {
+			return $totals_html;
+		}
+
+		if ( ! $product instanceof \WC_Product ) {
+			return $totals_html;
+		}
+
+		$original_price = $this->get_original_product_price( $product );
+		$currency_price = YayCurrencyHelper::calculate_price_by_currency( $original_price, false, $this->apply_currency );
+
+		$totals_html = preg_replace(
+			'/data-product-price="[^"]*"/',
+			'data-product-price="' . esc_attr( $currency_price ) . '"',
+			$totals_html,
+			1
+		);
+
+		if ( $this->lite_version ) {
+			$totals_html .= $this->get_lite_option_prices_script();
+		}
+
+		return $totals_html;
+	}
+
+	/**
+	 * Lite WAPF has no PHP filters for option data-wapf-price — convert once on the product page.
+	 *
+	 * @return string
+	 */
+	private function get_lite_option_prices_script() {
+		static $printed = false;
+		if ( $printed ) {
+			return '';
+		}
+		$printed = true;
+
+		$rate = (float) YayCurrencyHelper::get_rate_fee( $this->apply_currency );
+		if ( $rate <= 0 || 1.0 === $rate ) {
+			return '';
+		}
+
+		ob_start();
+		?>
+		<script>
+		(function ($) {
+			var yayCurrencyRate = <?php echo esc_js( $rate ); ?>;
+			function convertWapfOptionPrices() {
+				$('.wapf-input').each(function () {
+					var $input = $(this);
+					if ($input.prop('tagName').toLowerCase() === 'select') {
+						$input.find('option').each(function () {
+							var $option = $(this);
+							var price = parseFloat($option.attr('data-wapf-price'));
+							if (!isNaN(price) && !$option.data('yay-converted')) {
+								var converted = price * yayCurrencyRate;
+								$option.attr('data-wapf-price', converted).data('wapf-price', converted).data('yay-converted', true);
+							}
+						});
+					} else {
+						var price = parseFloat($input.attr('data-wapf-price'));
+						if (!isNaN(price) && !$input.data('yay-converted')) {
+							var converted = price * yayCurrencyRate;
+							$input.attr('data-wapf-price', converted).data('wapf-price', converted).data('yay-converted', true);
+						}
+					}
+				});
+			}
+			$(convertWapfOptionPrices);
+		})(jQuery);
+		</script>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Lite WAPF sets cart price via get_price() (already converted) + addon.
+	 * Restore default-currency total so YayCurrency's get_price pipeline converts once only.
+	 *
+	 * @param \WC_Cart $cart_obj Cart object.
+	 */
+	public function reset_lite_cart_item_price_to_default( $cart_obj ) {
+		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+			return;
+		}
+
+		foreach ( $cart_obj->get_cart() as $key => $item ) {
+			if ( empty( $item['wapf'] ) ) {
+				continue;
+			}
+
+			$default_price = SupportHelper::get_cart_item_objects_property( $item['data'], 'price_with_options_default' );
+			if ( false === $default_price || '' === $default_price ) {
+				continue;
+			}
+
+			$item['data']->set_price( (float) $default_price );
+		}
+	}
+
+	/**
+	 * Pro: WAPF reads $product->get_price() which YayCurrency already converted.
+	 * Return store-currency catalog price so options_total stays in default currency (avoid double convert on order totals).
+	 *
+	 * @param float       $price     Current base price.
+	 * @param \WC_Product $product   Product.
+	 * @param int         $quantity  Quantity.
+	 * @param array       $cart_item Cart item.
+	 * @return float
+	 */
+	public function get_cart_item_base_in_default_currency( $price, $product, $quantity = 1, $cart_item = array() ) {
+		if ( $this->should_skip_currency_convert() ) {
+			return $price;
+		}
+
+		$product_id = 0;
+		if ( ! empty( $cart_item['variation_id'] ) ) {
+			$product_id = (int) $cart_item['variation_id'];
+		} elseif ( ! empty( $cart_item['product_id'] ) ) {
+			$product_id = (int) $cart_item['product_id'];
+		} elseif ( $product instanceof \WC_Product ) {
+			$product_id = (int) $product->get_id();
+		}
+
+		if ( ! $product_id ) {
+			return $price;
+		}
+
+		$catalog_product = wc_get_product( $product_id );
+		if ( ! $catalog_product ) {
+			return $price;
+		}
+
+		return (float) $catalog_product->get_price( 'edit' );
+	}
+
+	public function get_price_default_in_checkout_page( $price, $product ) {
+		$price_with_options_default = SupportHelper::get_cart_item_objects_property( $product, 'price_with_options_default' );
+		if ( false !== $price_with_options_default && '' !== $price_with_options_default ) {
+			return (float) $price_with_options_default;
+		}
+		return $price;
 	}
 }

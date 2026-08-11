@@ -26,10 +26,6 @@ class FunnelKitAutomations {
 
 		add_filter( 'yay_currency_woocommerce_currency_symbol', array( $this, 'custom_currency_symbol' ), 10, 3 );
 
-		// Admin
-		add_filter( 'YayCurrency/Admin/GetLocalizeArgs', array( $this, 'admin_localize_args' ), 10, 1 );
-		add_action( 'wp_ajax_yay_bwf_admin_recalculate_revenue', array( $this, 'ajax_recalculate_revenue' ) );
-		add_action( 'wp_ajax_nopriv_yay_bwf_admin_recalculate_revenue', array( $this, 'ajax_recalculate_revenue' ) );
 		add_filter( 'bwfan_get_price_format_cart', array( $this, 'bwfan_get_price_format_cart' ), 10, 2 );
 		add_filter( 'bwfan_get_contacts', array( $this, 'bwfan_get_contacts' ), 10, 1 );
 
@@ -49,7 +45,7 @@ class FunnelKitAutomations {
 
 		$args = array( '/autonami-app/dashboard', '/autonami-app/carts/recovered', '/autonami-app/carts/recoverable', '/autonami-app/carts/lost' );
 
-		if ( in_array( $rest_route, $args ) ) {
+		if ( in_array( $rest_route, $args, true ) ) {
 			$symbol = YayCurrencyHelper::get_symbol_by_currency_code( $currency );
 		}
 
@@ -109,40 +105,5 @@ class FunnelKitAutomations {
 			}
 		}
 		return $results;
-	}
-
-	public function admin_localize_args( $localize_args ) {
-		$localize_args['funnel_kit_automation']                     = 'yes';
-		$localize_args['fkit_automation_customer_contact_purchase'] = isset( $_GET['page'] ) && isset( $_GET['path'] ) && 'autonami' === $_GET['page'] && '/contact/3/purchase' === $_GET['path'] ? 'yes' : 'no';
-		$localize_args['fkit_automation_customer_contact_page']     = isset( $_GET['page'] ) && isset( $_GET['path'] ) && 'autonami' === $_GET['page'] && '/contacts' === $_GET['path'] ? 'yes' : 'no';
-		$localize_args['fkit_automation_bwf_analytics_area']        = '.bwf-c-s-tab-cont[data-tab="purchase"] .bwf-analytics-card';
-		$localize_args['fkit_automation_bwf_purchase_tab']          = '.bwf-c-s-menu_item a';
-		$localize_args['fkit_automation_menu_page']                 = '#toplevel_page_autonami';
-		$localize_args['fkit_default_symbol']                       = YayCurrencyHelper::get_symbol_by_currency_code( Helper::default_currency_code() );
-		return $localize_args;
-	}
-
-	public function ajax_recalculate_revenue() {
-		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
-
-		if ( ! $nonce || ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-admin-nonce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Nonce invalid', 'yay-currency' ) ) );
-		}
-
-		$orderID = isset( $_POST['orderID'] ) ? sanitize_text_field( $_POST['orderID'] ) : 0;
-		if ( ! $orderID ) {
-			wp_send_json_error();
-		}
-
-		$order                = wc_get_order( $orderID );
-		$order_total          = $order->get_total();
-		$currency_code        = $order->get_currency();
-		$order_apply_currency = YayCurrencyHelper::get_currency_by_currency_code( $currency_code );
-		$format_order_total   = YayCurrencyHelper::calculate_custom_price_by_currency_html( $order_apply_currency, $order_total );
-		wp_send_json_success(
-			array(
-				'fkit_revenue' => $format_order_total,
-			)
-		);
 	}
 }

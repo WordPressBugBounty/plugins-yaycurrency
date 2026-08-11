@@ -76,11 +76,10 @@ class Ajax {
 	}
 
 	public function ajax_handle_sync_orders_revert_to_base() {
+		check_ajax_referer( 'yay-currency-woocommerce-admin-nonce', '_nonce' );
 
-		$nonce = isset( $_POST['_nonce'] ) ? sanitize_text_field( $_POST['_nonce'] ) : false;
-
-		if ( ! $nonce || ! wp_verify_nonce( sanitize_key( $nonce ), 'yay-currency-admin-nonce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Nonce invalid', 'yay-currency' ) ) );
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'yay-currency' ) ), 403 );
 		}
 
 		if ( isset( $_POST['_yay_sync'] ) ) {
@@ -94,9 +93,9 @@ class Ajax {
 						continue;
 					}
 					Helper::order_match_reverted( $order_id, $order );
-					self::update_wc_order_product_loop( $order_id );
-					self::update_wc_order_coupon_loop( $order_id );
-					self::update_wc_order_tax_loop( $order_id );
+					$this->update_wc_order_product_loop( $order_id );
+					$this->update_wc_order_coupon_loop( $order_id );
+					$this->update_wc_order_tax_loop( $order_id );
 					OrdersStatsDataStore::update( $order );
 				}
 			}

@@ -4,16 +4,16 @@
  * Plugin Name:       YayCurrency
  * Plugin URI:        https://yaycommerce.com/yaycurrency-woocommerce-multi-currency-switcher/
  * Description:       Provide multiple currencies for WooCommerce. Let your potential customers switch currency on the go.
- * Version:           3.3.4
+ * Version:           3.3.5
  * Author:            YayCommerce
  * Author URI:        https://yaycommerce.com
  * Text Domain:       yay-currency
  * Domain Path:       /languages
  * Requires at least: 4.7
- * Tested up to: 6.9.4
+ * Tested up to: 7.0
  * Requires PHP: 5.4
- * WC requires at least: 3.0.0
- * WC tested up to: 10.6.1
+ * WC requires at least: 5.0.0
+ * WC tested up to: 11.0
  *
  * @package yaycommerce/yaycurrency
  */
@@ -22,14 +22,18 @@ namespace Yay_Currency;
 
 defined( 'ABSPATH' ) || exit;
 
-if ( function_exists( 'Yay_Currency\\plugin_init' ) ) {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/Fallback.php';
+if ( function_exists( 'Yay_Currency\\plugin_init' ) || class_exists( 'YayCurrencyPluginAdapter' ) ) {
+	$fallback_file = plugin_dir_path( __FILE__ ) . 'includes/Fallback.php';
+	if ( file_exists( $fallback_file ) ) {
+		require_once $fallback_file;
+	}
 	add_action(
 		'admin_init',
 		function () {
 			deactivate_plugins( plugin_basename( __FILE__ ) );
 		}
 	);
+	return;
 }
 
 if ( ! defined( 'YAY_CURRENCY_FILE' ) ) {
@@ -37,7 +41,7 @@ if ( ! defined( 'YAY_CURRENCY_FILE' ) ) {
 }
 
 if ( ! defined( 'YAY_CURRENCY_VERSION' ) ) {
-	define( 'YAY_CURRENCY_VERSION', '3.3.4' );
+	define( 'YAY_CURRENCY_VERSION', '3.3.5' );
 }
 
 if ( ! defined( 'YAY_CURRENCY_PLUGIN_URL' ) ) {
@@ -53,34 +57,24 @@ if ( ! defined( 'YAY_CURRENCY_BASE_NAME' ) ) {
 }
 
 
-spl_autoload_register(
-	function ( $class ) {
-		$prefix   = __NAMESPACE__; // project-specific namespace prefix
-		$base_dir = __DIR__ . '/includes'; // base directory for the namespace prefix
 
-		$len = strlen( $prefix );
-		if ( strncmp( $prefix, $class, $len ) !== 0 ) { // does the class use the namespace prefix?
-			return; // no, move to the next registered autoloader
-		}
+require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/YayCurrencyPluginAdapter.php';
 
-		$relative_class_name = substr( $class, $len );
-
-		// replace the namespace prefix with the base directory, replace namespace
-		// separators with directory separators in the relative class name, append
-		// with .php
-		$file = $base_dir . str_replace( '\\', '/', $relative_class_name ) . '.php';
-
-		if ( file_exists( $file ) ) {
-			require $file;
-		}
-	}
+add_action(
+	'plugins_loaded',
+	function () {
+		\YayCurrencyScoped\YayCommerce\AdminShell\AdminShell::boot();
+		\YayCurrencyScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
+			new \YayCurrencyPluginAdapter()
+		);
+	},
+	5
 );
 
 if ( ! function_exists( 'Yay_Currency\\plugin_init' ) ) {
 
 	function plugin_init() {
-
-		\Yay_Currency\YayCommerceMenu\RegisterMenu::get_instance();
 		if ( ! function_exists( 'WC' ) ) {
 			add_action( 'admin_notices', array( \Yay_Currency\Engine\ActDeact::class, 'install_yaycurrency_admin_notice' ) );
 			return;

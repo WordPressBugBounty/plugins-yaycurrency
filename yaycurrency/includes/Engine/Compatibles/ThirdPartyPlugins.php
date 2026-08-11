@@ -70,7 +70,7 @@ class ThirdPartyPlugins {
 		}
 
 		// WooCommerce Table Rate Shipping. Link plugin: https://woocommerce.com/products/table-rate-shipping/
-		if ( class_exists( 'WC_Table_Rate_Shipping' ) ) {
+		if ( class_exists( 'WC_Table_Rate_Shipping' ) || class_exists( 'JEMTR_Table_Rate_Shipping_Method' ) ) {
 			add_filter( 'woocommerce_table_rate_package_row_base_price', array( $this, 'yay_wc_table_rate_shipping_plugin_row_base_price' ), 10, 3 );
 		}
 

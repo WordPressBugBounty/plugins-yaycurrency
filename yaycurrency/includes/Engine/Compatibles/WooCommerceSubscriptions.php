@@ -35,6 +35,8 @@ class WooCommerceSubscriptions {
 
 		$this->is_dis_checkout_diff_currency = YayCurrencyHelper::is_dis_checkout_diff_currency( $this->apply_currency );
 
+		add_filter( 'YayCurrency/Currency/IsHandledDelete', array( $this, 'is_handled_delete_currency' ), 10, 2 );
+
 		add_action( 'yay_currency_set_cart_contents', array( $this, 'product_addons_set_cart_contents' ), 10, 4 );
 
 		add_filter( 'YayCurrency/StoreCurrency/GetPrice', array( $this, 'get_price_default_in_checkout_page' ), 10, 2 );
@@ -69,6 +71,12 @@ class WooCommerceSubscriptions {
 		// Renewals Action
 		add_filter( 'wcs_new_order_created', array( $this, 'wcs_new_order_created' ), 999, 3 );
 
+	}
+
+	public function is_handled_delete_currency( $handled, $currency_id ) {
+		Helper::delete_currency_manually( $currency_id );
+		$handled = true;
+		return $handled;
 	}
 
 	protected function get_subscription_renewal_resubscribe_price_info( $cart_item, $parent_order_id, $apply_currency ) {
